@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { WordExplanation } from '../../common/types'
+import { WordExplanation, UserSettings } from '../../common/types'
 import { Volume2 } from 'lucide-react'
+import { getSettings } from '../../common/storage/settings'
+import { speak } from '../../common/utils/speech'
 
 interface TooltipProps {
   explanation: WordExplanation
@@ -10,16 +12,16 @@ interface TooltipProps {
 
 export const Tooltip: React.FC<TooltipProps> = ({ explanation, onClose, position }) => {
   const [visible, setVisible] = useState(false)
+  const [settings, setSettings] = useState<UserSettings | null>(null)
 
   useEffect(() => {
     // Small animation effect
     requestAnimationFrame(() => setVisible(true))
+    getSettings().then(setSettings)
   }, [])
 
   const playAudio = () => {
-    const utterance = new SpeechSynthesisUtterance(explanation.word)
-    utterance.lang = 'en-US'
-    window.speechSynthesis.speak(utterance)
+    speak(explanation.word, settings?.pronunciation === 'UK' ? 'en-GB' : 'en-US')
   }
 
   const style: React.CSSProperties = {
@@ -63,6 +65,9 @@ export const Tooltip: React.FC<TooltipProps> = ({ explanation, onClose, position
       
       {explanation.ipa && (
         <div style={{ color: '#666', fontSize: '13px', marginBottom: '8px' }}>
+          <span style={{ fontWeight: 'bold', marginRight: '4px', fontSize: '11px', color: '#1a73e8' }}>
+            {settings?.pronunciation === 'UK' ? 'UK' : 'US'}
+          </span>
           {explanation.ipa}
         </div>
       )}

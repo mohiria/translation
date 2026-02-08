@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { addToVocabulary, getVocabulary, removeFromVocabulary } from '../../common/storage/vocabulary'
 import { getSettings } from '../../common/storage/settings'
 import { lookupWord } from '../../common/nlp/dictionary'
-import { WordExplanation } from '../../common/types'
+import { WordExplanation, UserSettings } from '../../common/types'
 import { BookOpen, Plus, Trash2, Volume2 } from 'lucide-react'
 import { speak } from '../../common/utils/speech'
 
 export const SelectionPopup = () => {
+  const [settings, setSettings] = useState<UserSettings | null>(null)
   const [loading, setLoading] = useState(false)
   const [selection, setSelection] = useState<{
     text: string
@@ -14,6 +15,18 @@ export const SelectionPopup = () => {
     explanation: WordExplanation | null
     isSaved: boolean
   } | null>(null)
+
+  useEffect(() => {
+    getSettings().then(setSettings)
+
+    const handleStorageChange = (changes: any, areaName: string) => {
+      if (areaName === 'sync' && changes.settings) {
+        setSettings(changes.settings.newValue)
+      }
+    }
+    chrome.storage.onChanged.addListener(handleStorageChange)
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange)
+  }, [])
 
   useEffect(() => {
     const handleSelection = async () => {
@@ -40,13 +53,22 @@ export const SelectionPopup = () => {
         contextSentence = fullText.substring(start, end === -1 ? undefined : end + 1).trim()
       }
 
-      const localExp = lookupWord(text)
+      const settings = await getSettings()
+      const localExp = lookupWord(text, settings.pronunciation)
       const vocab = await getVocabulary()
       const isSaved = vocab.some(v => v.word.toLowerCase() === text.toLowerCase())
 
       if (isSaved) {
         const savedItem = vocab.find(v => v.word.toLowerCase() === text.toLowerCase())
-        setSelection({ text, rect, explanation: savedItem!, isSaved: true })
+        // Update the saved item's IPA based on current preference if it has both
+        const processedSavedItem = { ...savedItem! }
+        if (settings.pronunciation === 'UK' && processedSavedItem.ipa_uk) {
+          processedSavedItem.ipa = processedSavedItem.ipa_uk
+        } else if (settings.pronunciation === 'US' && processedSavedItem.ipa_us) {
+          processedSavedItem.ipa = processedSavedItem.ipa_us
+        }
+        
+        setSelection({ text, rect, explanation: processedSavedItem, isSaved: true })
         return
       }
 
@@ -57,8 +79,6 @@ export const SelectionPopup = () => {
 
       setSelection({ text, rect, explanation: null, isSaved: false })
       setLoading(true)
-      
-      const settings = await getSettings()
       
       chrome.runtime.sendMessage({ 
         type: 'TRANSLATE_WORD', 
@@ -116,11 +136,34 @@ export const SelectionPopup = () => {
     setTimeout(() => setSelection(null), 300)
   }
 
+  const calculatePosition = () => {
+    if (!selection) return {}
+    
+    const { rect } = selection
+    const popupHeight = 150 // Estimated max height
+    const popupWidth = 220
+    
+    const spaceBelow = window.innerHeight - rect.bottom
+    const showAbove = spaceBelow < popupHeight && rect.top > popupHeight
+
+    let top = showAbove ? rect.top - popupHeight - 10 : rect.bottom + 10
+    let left = rect.left + rect.width / 2
+
+    // Boundary checks for horizontal
+    const halfWidth = popupWidth / 2
+    if (left - halfWidth < 10) left = halfWidth + 10
+    if (left + halfWidth > window.innerWidth - 10) left = window.innerWidth - halfWidth - 10
+
+    return {
+      top: Math.max(10, top),
+      left,
+      transform: 'translateX(-50%)',
+      position: 'fixed' as const
+    }
+  }
+
   const style: React.CSSProperties = {
-    position: 'fixed',
-    top: selection.rect.bottom + 10, 
-    left: selection.rect.left + selection.rect.width / 2,
-    transform: 'translateX(-50%)',
+    ...calculatePosition(),
     backgroundColor: 'white',
     borderRadius: '8px',
     boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
@@ -140,7 +183,10 @@ export const SelectionPopup = () => {
         <BookOpen size={16} color="#4b8bf5" />
         <span style={{ fontWeight: 'bold' }}>{selection.text}</span>
         <button 
-          onClick={(e) => { e.stopPropagation(); speak(selection.text) }}
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            speak(selection.text, settings?.pronunciation === 'UK' ? 'en-GB' : 'en-US') 
+          }}
           style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#666', padding: '2px' }}
           title="Listen"
         >
@@ -169,7 +215,7 @@ export const SelectionPopup = () => {
                 borderRadius: '4px',
                 fontSize: '0.8rem'
               }}>
-                {selection.explanation.ipa}
+                {settings?.pronunciation === 'UK' ? 'UK' : 'US'} {selection.explanation.ipa}
               </span>
             )}
             <span style={{ fontWeight: 500 }}>{selection.explanation.meaning}</span>

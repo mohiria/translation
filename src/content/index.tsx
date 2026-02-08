@@ -48,29 +48,32 @@ const init = async () => {
     const combinedDict = { ...dynamicDict, ...vocabMap }
 
     console.log('Initial scan. Vocab:', vocabSet.size, 'Dict:', Object.keys(combinedDict).length)
-    scanAndHighlight(document.body, settings.proficiency, vocabSet, combinedDict)
+    scanAndHighlight(document.body, settings.proficiency, vocabSet, combinedDict, settings.pronunciation)
   }
 }
 
 // Listen for settings changes
 chrome.storage.onChanged.addListener(async (changes, areaName) => {
-  if (areaName === 'local' || areaName === 'sync') {
+  const isSyncChange = areaName === 'sync' && changes.settings
+  const isLocalChange = areaName === 'local' && (changes.settings || changes.vocabulary)
+  
+  if (isSyncChange || isLocalChange) {
     const settings = await getSettings()
-    if (changes.settings || changes.vocabulary) {
-      if (!settings.enabled) {
-        clearHighlights()
-      } else {
-        const vocabList = await getVocabulary()
-        const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
-        const dynamicDict = await getCachedDictionary()
-        
-        const vocabMap: Record<string, any> = {}
-        vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
-        const combinedDict = { ...dynamicDict, ...vocabMap }
-        
-        clearHighlights() 
-        scanAndHighlight(document.body, settings.proficiency, vocabSet, combinedDict)
-      }
+    console.log('Settings changed, refreshing highlights. Pronunciation:', settings.pronunciation)
+    
+    if (!settings.enabled) {
+      clearHighlights()
+    } else {
+      const vocabList = await getVocabulary()
+      const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
+      const dynamicDict = await getCachedDictionary()
+      
+      const vocabMap: Record<string, any> = {}
+      vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
+      const combinedDict = { ...dynamicDict, ...vocabMap }
+      
+      clearHighlights() 
+      scanAndHighlight(document.body, settings.proficiency, vocabSet, combinedDict, settings.pronunciation)
     }
   }
 })
@@ -93,7 +96,7 @@ if (document.readyState === 'loading') {
       mutations.forEach(mutation => {
         mutation.addedNodes.forEach(node => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            scanAndHighlight(node as HTMLElement, settings.proficiency, vocabSet, combinedDict)
+            scanAndHighlight(node as HTMLElement, settings.proficiency, vocabSet, combinedDict, settings.pronunciation)
           }
         })
       })

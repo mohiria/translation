@@ -15,6 +15,7 @@ export interface UserSettings {
   enabled: boolean
   proficiency: ProficiencyLevel
   showIPA: boolean
+  pronunciation: 'UK' | 'US'
   
   // Translation Engine Settings
   engine: 'google' | 'llm'
@@ -24,6 +25,8 @@ export interface UserSettings {
 export interface WordExplanation {
   word: string
   ipa?: string
+  ipa_us?: string
+  ipa_uk?: string
   meaning: string
   context?: string
   tags?: DictTag[]

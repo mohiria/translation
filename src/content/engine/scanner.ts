@@ -9,9 +9,10 @@ export const scanAndHighlight = (
   root: HTMLElement | Document, 
   level: ProficiencyLevel, 
   vocabulary: Set<string> = new Set(),
-  dynamicDict: Record<string, WordExplanation> = {}
+  dynamicDict: Record<string, WordExplanation> = {},
+  pronunciation: 'UK' | 'US' = 'US'
 ) => {
-  console.log('Scanning for level:', level, 'Vocab size:', vocabulary.size, 'Dict size:', Object.keys(dynamicDict).length)
+  console.log('Scanning for level:', level, 'Pronunciation:', pronunciation)
   const walker = document.createTreeWalker(
     root,
     NodeFilter.SHOW_TEXT,
@@ -35,7 +36,7 @@ export const scanAndHighlight = (
   }
 
   console.log(`Found ${nodesToProcess.length} text nodes to process`)
-  nodesToProcess.forEach(node => processTextNode(node, level, vocabulary, dynamicDict))
+  nodesToProcess.forEach(node => processTextNode(node, level, vocabulary, dynamicDict, pronunciation))
 }
 
 export const clearHighlights = (root: HTMLElement | Document = document) => {
@@ -55,16 +56,14 @@ const processTextNode = (
   node: Text, 
   level: ProficiencyLevel, 
   vocabulary: Set<string>,
-  dynamicDict: Record<string, WordExplanation>
+  dynamicDict: Record<string, WordExplanation>,
+  pronunciation: 'UK' | 'US'
 ) => {
   const text = node.nodeValue
   if (!text || !text.trim()) return
 
   const matches = analyzeText(text, level, vocabulary, dynamicDict)
-  if (matches.length > 0) {
-    console.log(`Found ${matches.length} matches in text node:`, text.substring(0, 30) + '...')
-  }
-
+  
   const fragment = document.createDocumentFragment()
   let lastIndex = 0
 
@@ -84,6 +83,14 @@ const processTextNode = (
     container.style.lineHeight = '1.2'
     container.style.transition = 'background-color 0.2s'
 
+    // If it's a dynamic explanation (like from LLM/saved), ensure the IPA is correct for current setting
+    let finalExplanation = { ...match.explanation }
+    if (pronunciation === 'UK' && finalExplanation.ipa_uk) {
+      finalExplanation.ipa = finalExplanation.ipa_uk
+    } else if (pronunciation === 'US' && finalExplanation.ipa_us) {
+      finalExplanation.ipa = finalExplanation.ipa_us
+    }
+
     const span = document.createElement('span')
     span.textContent = match.word
     span.className = 'll-word'
@@ -94,7 +101,7 @@ const processTextNode = (
     span.onclick = async (e) => {
       e.stopPropagation()
       const savedWord: SavedWord = {
-        ...match.explanation,
+        ...finalExplanation,
         timestamp: Date.now(),
         sourceUrl: window.location.href
       }
@@ -117,18 +124,22 @@ const processTextNode = (
     voiceBtn.style.color = '#666'
     voiceBtn.style.display = 'inline-flex'
     voiceBtn.style.alignItems = 'center'
-    voiceBtn.title = 'Listen'
+    voiceBtn.title = `Listen (${pronunciation})`
     voiceBtn.onclick = (e) => {
       e.stopPropagation()
-      speak(match.word)
+      speak(match.word, pronunciation === 'UK' ? 'en-GB' : 'en-US')
     }
     container.appendChild(voiceBtn)
 
     const translation = document.createElement('span')
     translation.className = 'll-translation'
-    const separator = match.explanation.ipa ? ' · ' : ''
-    const ipaPart = match.explanation.ipa || ''
-    translation.textContent = ` (${ipaPart}${separator}${match.explanation.meaning})`
+    
+    // Use the correctly formatted IPA with UK/US label
+    const ipaLabel = pronunciation === 'UK' ? 'UK ' : 'US '
+    const separator = finalExplanation.ipa ? ' · ' : ''
+    const ipaPart = finalExplanation.ipa ? `${ipaLabel}${finalExplanation.ipa}` : ''
+    
+    translation.textContent = ` (${ipaPart}${separator}${finalExplanation.meaning})`
     
     translation.style.color = '#555' 
     translation.style.fontSize = '0.85em'

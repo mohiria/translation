@@ -12,12 +12,12 @@ export const analyzeText = (
   text: string, 
   userLevel: ProficiencyLevel = 'CEFR_A1', 
   vocabulary: Set<string> = new Set(),
-  dynamicDict: Record<string, WordExplanation> = {}
+  dynamicDict: Record<string, WordExplanation> = {},
+  pronunciation: 'UK' | 'US' = 'US'
 ): IdentifiedWord[] => {
   const results: IdentifiedWord[] = []
   
   // Simple regex to split by non-word characters but keep offsets
-  // This is a naive tokenizer. In production, use `Intl.Segmenter` or a proper NLP lib.
   const regex = /\b[a-zA-Z]{3,}\b/g
   let match
   
@@ -29,16 +29,20 @@ export const analyzeText = (
     const isSavedWord = vocabulary.has(lowerWord)
     
     // Check priority: Vocabulary Book / Dynamic Dict > Built-in dictionary
-    let explanation = dynamicDict[lowerWord] || lookupWord(word)
+    let explanation = dynamicDict[lowerWord] || lookupWord(word, pronunciation)
 
     if (!explanation) continue
-
-    // Check difficulty logic
-    // We need to pass the tags from the explanation to the check logic
-    // Since isDifficultyAbove currently does a lookup inside, we need to adapt it
-    // Or simpler: we replicate the logic here if we have the explanation object
     
-    // Helper to check difficulty if we already have the explanation object
+    // If it's a dynamic explanation (like from LLM/saved), ensure the IPA is correct for current setting
+    if (dynamicDict[lowerWord]) {
+      explanation = { ...explanation }
+      if (pronunciation === 'UK' && explanation.ipa_uk) {
+        explanation.ipa = explanation.ipa_uk
+      } else if (pronunciation === 'US' && explanation.ipa_us) {
+        explanation.ipa = explanation.ipa_us
+      }
+    }
+
     const isHardEnough = checkDifficulty(explanation, userLevel)
     
     if (isSavedWord || isHardEnough) {

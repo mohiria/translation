@@ -35,6 +35,7 @@ describe('Settings Storage', () => {
       enabled: true, 
       proficiency: 'CEFR_B2', 
       showIPA: false, 
+      pronunciation: 'US',
       engine: 'google',
       llm: { provider: 'gemini', apiKey: '' }
     }
@@ -50,6 +51,7 @@ describe('Settings Storage', () => {
       enabled: true, 
       proficiency: 'CEFR_B2', 
       showIPA: false, 
+      pronunciation: 'US',
       engine: 'google',
       llm: { provider: 'gemini', apiKey: '' }
     }
@@ -66,6 +68,7 @@ describe('Settings Storage', () => {
       enabled: true, 
       proficiency: 'CET6', 
       showIPA: true, 
+      pronunciation: 'US',
       engine: 'llm',
       llm: { provider: 'openai', apiKey: 'sk-test' }
     }

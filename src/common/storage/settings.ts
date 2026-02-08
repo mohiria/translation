@@ -4,6 +4,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   enabled: true,
   proficiency: 'CET4',
   showIPA: true,
+  pronunciation: 'US',
   engine: 'google',
   llm: {
     provider: 'gemini',

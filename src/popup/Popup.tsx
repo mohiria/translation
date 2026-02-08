@@ -68,6 +68,44 @@ export const Popup = () => {
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
+        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.4rem', color: '#666' }}>
+          Pronunciation Style:
+        </label>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => updateSettings(prev => ({ ...prev, pronunciation: 'US' }))}
+            style={{
+              flex: 1,
+              padding: '6px',
+              borderRadius: '6px',
+              border: settings.pronunciation === 'US' ? '1px solid #4b8bf5' : '1px solid #ddd',
+              backgroundColor: settings.pronunciation === 'US' ? '#f0f7ff' : 'white',
+              color: settings.pronunciation === 'US' ? '#4b8bf5' : '#333',
+              cursor: 'pointer',
+              fontSize: '0.8rem'
+            }}
+          >
+            US (American)
+          </button>
+          <button
+            onClick={() => updateSettings(prev => ({ ...prev, pronunciation: 'UK' }))}
+            style={{
+              flex: 1,
+              padding: '6px',
+              borderRadius: '6px',
+              border: settings.pronunciation === 'UK' ? '1px solid #4b8bf5' : '1px solid #ddd',
+              backgroundColor: settings.pronunciation === 'UK' ? '#f0f7ff' : 'white',
+              color: settings.pronunciation === 'UK' ? '#4b8bf5' : '#333',
+              cursor: 'pointer',
+              fontSize: '0.8rem'
+            }}
+          >
+            UK (British)
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.6rem', color: '#666' }}>
           Translation Engine:
         </label>

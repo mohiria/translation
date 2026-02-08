@@ -81,6 +81,30 @@ export const Options = () => {
             <p style={{ fontSize: '0.85rem', color: '#666' }}>Words you already know at this level won't be highlighted.</p>
           </div>
 
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>Pronunciation Style</label>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input 
+                  type="radio" 
+                  name="pronunciation"
+                  checked={settings.pronunciation === 'US'} 
+                  onChange={() => updateSettings(prev => ({ ...prev, pronunciation: 'US' }))}
+                />
+                American (US)
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input 
+                  type="radio" 
+                  name="pronunciation"
+                  checked={settings.pronunciation === 'UK'} 
+                  onChange={() => updateSettings(prev => ({ ...prev, pronunciation: 'UK' }))}
+                />
+                British (UK)
+              </label>
+            </div>
+          </div>
+
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
               <input 
