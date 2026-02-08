@@ -81,7 +81,14 @@ export const SelectionPopup = () => {
       })
     }
 
-    const onMouseUp = () => {
+    const onMouseUp = (e: MouseEvent) => {
+      // Don't re-trigger translation if clicking inside the popup
+      // When clicking inside Shadow DOM, the event target is retargeted to the host element
+      const host = document.getElementById('ll-extension-host')
+      if (host && (e.target === host || e.composedPath().includes(host))) {
+        return
+      }
+      
       setTimeout(handleSelection, 10)
     }
 
@@ -128,7 +135,7 @@ export const SelectionPopup = () => {
   }
 
   return (
-    <div style={style} onMouseDown={(e) => e.stopPropagation()}>
+    <div style={style} onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
         <BookOpen size={16} color="#4b8bf5" />
         <span style={{ fontWeight: 'bold' }}>{selection.text}</span>
