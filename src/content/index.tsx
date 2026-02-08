@@ -54,7 +54,7 @@ const init = async () => {
 
 // Listen for settings changes
 chrome.storage.onChanged.addListener(async (changes, areaName) => {
-  if (areaName === 'local') {
+  if (areaName === 'local' || areaName === 'sync') {
     const settings = await getSettings()
     if (changes.settings || changes.vocabulary) {
       if (!settings.enabled) {

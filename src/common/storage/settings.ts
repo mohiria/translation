@@ -14,20 +14,61 @@ const DEFAULT_SETTINGS: UserSettings = {
 }
 
 export const getSettings = async (): Promise<UserSettings> => {
-  const data = await chrome.storage.local.get('settings')
-  const stored = data.settings || {}
+
+  // Try to get from sync storage first
+
+  let data = await chrome.storage.sync.get('settings')
+
   
-  // Deep merge defaults with stored settings
-  return {
-    ...DEFAULT_SETTINGS,
-    ...stored,
-    llm: {
-      ...DEFAULT_SETTINGS.llm,
-      ...(stored.llm || {})
+
+  // Migration logic: if not in sync, try local
+
+  if (!data.settings) {
+
+    const localData = await chrome.storage.local.get('settings')
+
+    if (localData.settings) {
+
+      data = localData
+
+      // Save to sync for future use
+
+      await chrome.storage.sync.set({ settings: data.settings })
+
     }
+
   }
+
+
+
+  const stored = data.settings || {}
+
+  
+
+  // Deep merge defaults with stored settings
+
+  return {
+
+    ...DEFAULT_SETTINGS,
+
+    ...stored,
+
+    llm: {
+
+      ...DEFAULT_SETTINGS.llm,
+
+      ...(stored.llm || {})
+
+    }
+
+  }
+
 }
 
+
+
 export const saveSettings = async (settings: UserSettings): Promise<void> => {
-  await chrome.storage.local.set({ settings })
+
+  await chrome.storage.sync.set({ settings })
+
 }

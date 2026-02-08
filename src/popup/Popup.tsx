@@ -14,28 +14,26 @@ export const Popup = () => {
     getVocabulary().then(setVocabulary)
   }, [])
 
-  const handleLevelChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const updateSettings = async (updater: (prev: UserSettings) => UserSettings) => {
     if (!settings) return
-    const updated = { ...settings, proficiency: e.target.value as ProficiencyLevel }
+    const updated = updater(settings)
     setSettings(updated)
     await saveSettings(updated)
+  }
+
+  const handleLevelChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    updateSettings(prev => ({ ...prev, proficiency: e.target.value as ProficiencyLevel }))
   }
 
   const handleEngineChange = async (engine: 'google' | 'llm') => {
-    if (!settings) return
-    const updated = { ...settings, engine }
-    setSettings(updated)
-    await saveSettings(updated)
+    updateSettings(prev => ({ ...prev, engine }))
   }
 
-  const handleLLMChange = async (field: keyof LLMSettings, value: string) => {
-    if (!settings) return
-    const updated = { 
-      ...settings, 
-      llm: { ...settings.llm, [field]: value } 
-    }
-    setSettings(updated)
-    await saveSettings(updated)
+  const handleLLMUpdate = async (updates: Partial<LLMSettings>) => {
+    updateSettings(prev => ({
+      ...prev,
+      llm: { ...prev.llm, ...updates }
+    }))
   }
 
   const handleDeleteWord = async (wordText: string) => {
@@ -151,12 +149,13 @@ export const Popup = () => {
             value={settings.llm.provider} 
             onChange={(e) => {
               const newProvider = e.target.value as LLMProvider
-              handleLLMChange('provider', newProvider)
+              const updates: Partial<LLMSettings> = { provider: newProvider }
               if (newProvider !== 'custom') {
-                handleLLMChange('model', LLM_MODELS[newProvider as keyof typeof LLM_MODELS][0])
+                updates.model = LLM_MODELS[newProvider as keyof typeof LLM_MODELS][0]
               } else {
-                handleLLMChange('model', '')
+                updates.model = ''
               }
+              handleLLMUpdate(updates)
             }}
             style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
           >
@@ -174,14 +173,14 @@ export const Popup = () => {
             <input 
               type="text"
               value={settings.llm.model || ''} 
-              onChange={(e) => handleLLMChange('model', e.target.value)}
+              onChange={(e) => handleLLMUpdate({ model: e.target.value })}
               placeholder="Enter model name (e.g. gpt-4-turbo)"
               style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
             />
           ) : (
             <select 
               value={settings.llm.model} 
-              onChange={(e) => handleLLMChange('model', e.target.value)}
+              onChange={(e) => handleLLMUpdate({ model: e.target.value })}
               style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
             >
               {providerModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -194,7 +193,7 @@ export const Popup = () => {
           <input 
             type="password"
             value={settings.llm.apiKey} 
-            onChange={(e) => handleLLMChange('apiKey', e.target.value)}
+            onChange={(e) => handleLLMUpdate({ apiKey: e.target.value })}
             placeholder="sk-..."
             style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
@@ -205,7 +204,7 @@ export const Popup = () => {
           <input 
             type="text"
             value={settings.llm.baseUrl || ''} 
-            onChange={(e) => handleLLMChange('baseUrl', e.target.value)}
+            onChange={(e) => handleLLMUpdate({ baseUrl: e.target.value })}
             placeholder={LLM_DEFAULT_URLS[settings.llm.provider]}
             style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
