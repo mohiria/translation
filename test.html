@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning Extension Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            color: #333;
+        }
+        h1 {
+            color: #1a73e8;
+        }
+        .box {
+            border: 1px solid #eee;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        code {
+            background: #eee;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Project Overview</h1>
+    <p>
+        This is a test page for our <strong>Language Learning Extension</strong>. 
+        The goal of this project is to help users improve their language <strong>proficiency</strong> 
+        through natural <strong>acquisition</strong> while reading content in their <strong>browser</strong>.
+    </p>
+
+    <div class="box">
+        <h2>Key Features</h2>
+        <ul>
+            <li>Intelligent <strong>extension</strong> logic for word detection.</li>
+            <li>Artificial <strong>intelligence</strong> powered explanations.</li>
+            <li><strong>Contextual</strong> understanding of complex phrases.</li>
+        </ul>
+    </div>
+
+    <p>
+        Normally, you would read a long article, and the tool would highlight only the 
+        words that match your current learning level. 
+    </p>
+
+    <p>
+        <em>Note:</em> Words inside <code>code tags like this: intelligence</code> should be ignored by the scanner.
+    </p>
+
+    <div id="dynamic-content">
+        <!-- Content added via JS to test MutationObserver -->
+    </div>
+
+    <script>
+        setTimeout(() => {
+            const div = document.getElementById('dynamic-content');
+            const p = document.createElement('p');
+            p.innerHTML = 'This paragraph was added <strong>dynamically</strong> after 3 seconds to test the <strong>intelligence</strong> of our observer.';
+            div.appendChild(p);
+        }, 3000);
+    </script>
+</body>
+</html>
