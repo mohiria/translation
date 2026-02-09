@@ -1,8 +1,23 @@
 import { fetchFromLLM } from './llm'
 import { UserSettings } from '../common/types'
 import { formatIPA } from '../common/utils/format'
+import { getSettings, saveSettings } from '../common/storage/settings'
 
 console.log('Language Learning Background script loaded')
+
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+  }
+});
+
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command === 'toggle-translation') {
+    const settings = await getSettings();
+    const updated = { ...settings, enabled: !settings.enabled };
+    await saveSettings(updated);
+  }
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'TRANSLATE_WORD') {

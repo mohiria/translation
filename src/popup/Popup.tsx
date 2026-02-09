@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { getSettings, saveSettings } from '../common/storage/settings'
 import { ProficiencyLevel, UserSettings, SavedWord, LLMProvider, LLMSettings } from '../common/types'
 import { getVocabulary, removeFromVocabulary } from '../common/storage/vocabulary'
-import { Trash2, Settings, BookOpen, Cpu, Globe } from 'lucide-react'
+import { Trash2, Settings, BookOpen, Cpu, Globe, Keyboard } from 'lucide-react'
 import { formatIPA } from '../common/utils/format'
 
 export const Popup = () => {
@@ -298,6 +298,21 @@ export const Popup = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <h2 style={{ fontSize: '1.1rem', margin: 0, color: '#2c3e50' }}>Fluency</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            onClick={() => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#888',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            title="Keyboard Shortcuts"
+          >
+            <Keyboard size={18} />
+          </button>
           <button 
             onClick={async () => {
               if (!settings) return
