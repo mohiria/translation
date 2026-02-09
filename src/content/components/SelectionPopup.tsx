@@ -5,6 +5,7 @@ import { lookupWord } from '../../common/nlp/dictionary'
 import { WordExplanation, UserSettings } from '../../common/types'
 import { BookOpen, Plus, Trash2, Volume2 } from 'lucide-react'
 import { speak } from '../../common/utils/speech'
+import { formatIPA } from '../../common/utils/format'
 
 export const SelectionPopup = () => {
   const [settings, setSettings] = useState<UserSettings | null>(null)
@@ -215,7 +216,7 @@ export const SelectionPopup = () => {
                 borderRadius: '4px',
                 fontSize: '0.8rem'
               }}>
-                {settings?.pronunciation === 'UK' ? 'UK' : 'US'} {selection.explanation.ipa}
+                {settings?.pronunciation === 'UK' ? 'UK' : 'US'} {formatIPA(selection.explanation.ipa)}
               </span>
             )}
             <span style={{ fontWeight: 500 }}>{selection.explanation.meaning}</span>

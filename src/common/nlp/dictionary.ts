@@ -1,4 +1,5 @@
 import { ProficiencyLevel, DictTag, WordExplanation } from '../types'
+import { formatIPA } from '../utils/format'
 
 // Mapping from Tags to estimated CEFR Level
 const TAG_LEVEL_MAP: Record<DictTag, number> = {
@@ -26,12 +27,12 @@ const USER_LEVEL_RANK: Record<ProficiencyLevel, number> = {
 // ---------------------------------------------------------------------------
 const DICT_DATA: Record<string, WordExplanation> = {
   // --- A1 / A2 (Middle School / ZK) ---
-  'apple': { word: 'apple', ipa: '/ˈæpl/', meaning: '苹果', tags: ['zk'] },
-  'school': { word: 'school', ipa: '/skuːl/', meaning: '学校', tags: ['zk'] },
-  'time': { word: 'time', ipa: '/taɪm/', meaning: '时间', tags: ['zk'] },
-  'browser': { word: 'browser', ipa: '/ˈbraʊzər/', meaning: '浏览器', tags: ['gk'] },
-  'system': { word: 'system', ipa: '/ˈsɪstəm/', meaning: '系统', tags: ['zk', 'gk'] },
-  'program': { word: 'program', ipa: '/ˈprəʊɡræm/', meaning: '程序', tags: ['zk', 'gk'] },
+  'apple': { word: 'apple', ipa: 'ˈæpl', meaning: '苹果', tags: ['zk'] },
+  'school': { word: 'school', ipa: 'skuːl', meaning: '学校', tags: ['zk'] },
+  'time': { word: 'time', ipa: 'taɪm', meaning: '时间', tags: ['zk'] },
+  'browser': { word: 'browser', ipa: 'ˈbraʊzər', meaning: '浏览器', tags: ['gk'] },
+  'system': { word: 'system', ipa: 'ˈsɪstəm', meaning: '系统', tags: ['zk', 'gk'] },
+  'program': { word: 'program', ipa: 'ˈprəʊɡræm', meaning: '程序', tags: ['zk', 'gk'] },
 
   // --- B1 (High School / GK / CET4) ---
   'extension': { word: 'extension', ipa_us: 'ɪkˈstenʃn', ipa_uk: 'ɪkˈstenʃn', meaning: '扩展/延伸', tags: ['gk', 'cet4'] },
@@ -96,12 +97,15 @@ export const lookupWord = (word: string, preferredPron: 'UK' | 'US' = 'US'): Wor
     // Create a NEW object to avoid mutating the original DICT_DATA or cached entries
     const result = { ...entry }
     if (preferredPron === 'UK' && result.ipa_uk) {
-      result.ipa = result.ipa_uk
+      result.ipa = formatIPA(result.ipa_uk)
     } else if (preferredPron === 'US' && result.ipa_us) {
-      result.ipa = result.ipa_us
+      result.ipa = formatIPA(result.ipa_us)
     } else if (!result.ipa) {
       // Fallback if no regional IPA exists
-      result.ipa = result.ipa_us || result.ipa_uk || ''
+      result.ipa = formatIPA(result.ipa_us || result.ipa_uk || '')
+    } else {
+      // If it already has result.ipa (like from the static dict entry directly)
+      result.ipa = formatIPA(result.ipa)
     }
     return result
   }

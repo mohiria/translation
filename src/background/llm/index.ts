@@ -1,4 +1,5 @@
 import { LLMSettings, UserSettings } from '../../common/types'
+import { formatIPA } from '../../common/utils/format'
 
 interface LLMResponse {
   word: string
@@ -140,9 +141,9 @@ const parseLLMJson = (text: string, source: string, pronunciation: 'UK' | 'US'):
     const json = JSON.parse(cleanText)
     return {
       word: json.word,
-      ipa_us: json.ipa_us,
-      ipa_uk: json.ipa_uk,
-      ipa: pronunciation === 'US' ? (json.ipa_us || json.ipa) : (json.ipa_uk || json.ipa),
+      ipa_us: formatIPA(json.ipa_us),
+      ipa_uk: formatIPA(json.ipa_uk),
+      ipa: formatIPA(pronunciation === 'US' ? (json.ipa_us || json.ipa) : (json.ipa_uk || json.ipa)),
       meaning: json.meaning,
       context: json.context,
       source: `AI (${source})`

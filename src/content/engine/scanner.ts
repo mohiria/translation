@@ -2,6 +2,7 @@ import { analyzeText } from '../../common/nlp/analyzer'
 import { ProficiencyLevel, SavedWord, WordExplanation } from '../../common/types'
 import { addToVocabulary } from '../../common/storage/vocabulary'
 import { speak } from '../../common/utils/speech'
+import { formatIPA } from '../../common/utils/format'
 
 const IGNORE_TAGS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'NOSCRIPT', 'CODE', 'PRE'])
 
@@ -137,7 +138,7 @@ const processTextNode = (
     // Use the correctly formatted IPA with UK/US label
     const ipaLabel = pronunciation === 'UK' ? 'UK ' : 'US '
     const separator = finalExplanation.ipa ? ' · ' : ''
-    const ipaPart = finalExplanation.ipa ? `${ipaLabel}${finalExplanation.ipa}` : ''
+    const ipaPart = finalExplanation.ipa ? `${ipaLabel}${formatIPA(finalExplanation.ipa)}` : ''
     
     translation.textContent = ` (${ipaPart}${separator}${finalExplanation.meaning})`
     

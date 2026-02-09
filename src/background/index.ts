@@ -1,5 +1,6 @@
 import { fetchFromLLM } from './llm'
 import { UserSettings } from '../common/types'
+import { formatIPA } from '../common/utils/format'
 
 console.log('Language Learning Background script loaded')
 
@@ -66,9 +67,9 @@ async function fetchFromYoudao(word: string, preferredPron: 'UK' | 'US') {
     if (meaning) {
        return {
          word,
-         ipa_us,
-         ipa_uk,
-         ipa: preferredPron === 'UK' ? (ipa_uk || ipa_us) : (ipa_us || ipa_uk),
+         ipa_us: formatIPA(ipa_us),
+         ipa_uk: formatIPA(ipa_uk),
+         ipa: formatIPA(preferredPron === 'UK' ? (ipa_uk || ipa_us) : (ipa_us || ipa_uk)),
          meaning: meaning,
          source: 'Youdao'
        };

@@ -3,6 +3,7 @@ import { WordExplanation, UserSettings } from '../../common/types'
 import { Volume2 } from 'lucide-react'
 import { getSettings } from '../../common/storage/settings'
 import { speak } from '../../common/utils/speech'
+import { formatIPA } from '../../common/utils/format'
 
 interface TooltipProps {
   explanation: WordExplanation
@@ -68,7 +69,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ explanation, onClose, position
           <span style={{ fontWeight: 'bold', marginRight: '4px', fontSize: '11px', color: '#1a73e8' }}>
             {settings?.pronunciation === 'UK' ? 'UK' : 'US'}
           </span>
-          {explanation.ipa}
+          {formatIPA(explanation.ipa)}
         </div>
       )}
       

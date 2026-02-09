@@ -1,5 +1,6 @@
 import { isDifficultyAbove, lookupWord } from './dictionary'
 import { ProficiencyLevel, WordExplanation } from '../types'
+import { formatIPA } from '../utils/format'
 
 export interface IdentifiedWord {
   word: string
@@ -37,9 +38,11 @@ export const analyzeText = (
     if (dynamicDict[lowerWord]) {
       explanation = { ...explanation }
       if (pronunciation === 'UK' && explanation.ipa_uk) {
-        explanation.ipa = explanation.ipa_uk
+        explanation.ipa = formatIPA(explanation.ipa_uk)
       } else if (pronunciation === 'US' && explanation.ipa_us) {
-        explanation.ipa = explanation.ipa_us
+        explanation.ipa = formatIPA(explanation.ipa_us)
+      } else {
+        explanation.ipa = formatIPA(explanation.ipa)
       }
     }
 

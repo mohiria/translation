@@ -3,6 +3,7 @@ import { getSettings, saveSettings } from '../common/storage/settings'
 import { ProficiencyLevel, UserSettings, SavedWord, LLMProvider, LLMSettings } from '../common/types'
 import { getVocabulary, removeFromVocabulary } from '../common/storage/vocabulary'
 import { Trash2, Settings, BookOpen, Cpu, Globe } from 'lucide-react'
+import { formatIPA } from '../common/utils/format'
 
 export const Popup = () => {
   const [settings, setSettings] = useState<UserSettings | null>(null)
@@ -276,7 +277,7 @@ export const Popup = () => {
             }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 'bold', color: '#333' }}>{item.word}</div>
-                <div style={{ fontSize: '0.75rem', color: '#666' }}>{item.ipa} {item.meaning}</div>
+                <div style={{ fontSize: '0.75rem', color: '#666' }}>{formatIPA(item.ipa)} {item.meaning}</div>
               </div>
               <button 
                 onClick={() => handleDeleteWord(item.word)}
