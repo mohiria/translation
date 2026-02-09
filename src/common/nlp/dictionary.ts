@@ -2,7 +2,7 @@ import { ProficiencyLevel, DictTag, WordExplanation } from '../types'
 import { formatIPA } from '../utils/format'
 
 // Mapping from Tags to estimated CEFR Level
-const TAG_LEVEL_MAP: Record<DictTag, number> = {
+export const TAG_LEVEL_MAP: Record<DictTag, number> = {
   'zk': 1,    // Zhongkao -> ~A1/A2
   'gk': 2,    // Gaokao -> ~B1
   'cet4': 3,  // CET-4 -> ~B1/B2
@@ -13,7 +13,7 @@ const TAG_LEVEL_MAP: Record<DictTag, number> = {
   'gre': 6    // GRE -> ~C2
 }
 
-const USER_LEVEL_RANK: Record<ProficiencyLevel, number> = {
+export const USER_LEVEL_RANK: Record<ProficiencyLevel, number> = {
   'CEFR_A1': 1, 'CEFR_A2': 1.5,
   'CEFR_B1': 2, 'CEFR_B2': 3, // B1 is rank 2 (GK level), B2 is rank 3/4
   'CET4': 3, 

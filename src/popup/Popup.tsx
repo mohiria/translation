@@ -58,13 +58,13 @@ export const Popup = () => {
           onChange={handleLevelChange}
           style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}
         >
-          <option value="CEFR_A1">A1 - Beginner</option>
-          <option value="CEFR_A2">A2 - Elementary</option>
-          <option value="CEFR_B1">B1 - Intermediate</option>
-          <option value="CEFR_B2">B2 - Upper Int</option>
-          <option value="CET4">CET-4 (College English)</option>
-          <option value="CET6">CET-6 (Advanced)</option>
-          <option value="CEFR_C1">C1 - Advanced</option>
+          <option value="CEFR_A1">初学 (A1 - Beginner)</option>
+          <option value="CEFR_A2">基础 (A2 - Elementary)</option>
+          <option value="CEFR_B1">中级 (B1 - Intermediate)</option>
+          <option value="CET4">四级 (CET4) / B2</option>
+          <option value="CET6">六级 (CET6) / 考研</option>
+          <option value="CEFR_C1">高级 (C1) / 雅思 / 托福</option>
+          <option value="CEFR_C2">精通 (C2) / GRE</option>
         </select>
       </div>
 

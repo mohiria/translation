@@ -1,4 +1,4 @@
-import { isDifficultyAbove, lookupWord } from './dictionary'
+import { isDifficultyAbove, lookupWord, USER_LEVEL_RANK, TAG_LEVEL_MAP } from './dictionary'
 import { ProficiencyLevel, WordExplanation } from '../types'
 import { formatIPA } from '../utils/format'
 
@@ -68,17 +68,6 @@ export const analyzeText = (
   }
   
   return results
-}
-
-// Re-implementing logic here to avoid circular dependency or API change in dictionary.ts for now
-// Ideally, dictionary.ts should export this helper
-import { DictTag } from '../types'
-const TAG_LEVEL_MAP: Record<DictTag, number> = {
-  'zk': 1, 'gk': 2, 'cet4': 3, 'ky': 4, 'cet6': 4, 'ielts': 5, 'toefl': 5, 'gre': 6
-}
-const USER_LEVEL_RANK: Record<ProficiencyLevel, number> = {
-  'CEFR_A1': 1, 'CEFR_A2': 1.5, 'CEFR_B1': 2, 'CEFR_B2': 3,
-  'CET4': 3, 'CET6': 4, 'CEFR_C1': 5, 'CEFR_C2': 6
 }
 
 const checkDifficulty = (entry: WordExplanation, userLevel: ProficiencyLevel): boolean => {

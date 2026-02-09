@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { addToVocabulary, getVocabulary, removeFromVocabulary } from '../../common/storage/vocabulary'
 import { getSettings } from '../../common/storage/settings'
-import { lookupWord } from '../../common/nlp/dictionary'
+import { lookupWordInDB } from '../../common/storage/indexed-db'
 import { WordExplanation, UserSettings } from '../../common/types'
 import { BookOpen, Plus, Trash2, Volume2 } from 'lucide-react'
 import { speak } from '../../common/utils/speech'
@@ -55,18 +55,19 @@ export const SelectionPopup = () => {
       }
 
       const settings = await getSettings()
-      const localExp = lookupWord(text, settings.pronunciation)
+      const localExp = await lookupWordInDB(text)
       const vocab = await getVocabulary()
       const isSaved = vocab.some(v => v.word.toLowerCase() === text.toLowerCase())
 
       if (isSaved) {
         const savedItem = vocab.find(v => v.word.toLowerCase() === text.toLowerCase())
-        const localEntry = lookupWord(text, settings.pronunciation)
-        
         // Update the saved item's IPA based on current preference if it has both
         const processedSavedItem = { ...savedItem! }
-        const ipa_uk = processedSavedItem.ipa_uk || localEntry?.ipa_uk
-        const ipa_us = processedSavedItem.ipa_us || localEntry?.ipa_us
+        
+        // Try to get regional IPA from the DB if the saved item doesn't have it
+        const dbEntry = localExp
+        const ipa_uk = processedSavedItem.ipa_uk || dbEntry?.ipa_uk
+        const ipa_us = processedSavedItem.ipa_us || dbEntry?.ipa_us
 
         if (settings.pronunciation === 'UK' && ipa_uk) {
           processedSavedItem.ipa = formatIPA(ipa_uk)
@@ -81,7 +82,17 @@ export const SelectionPopup = () => {
       }
 
       if (localExp) {
-        setSelection({ text, rect, explanation: localExp, isSaved: false })
+        // Apply regional IPA to the local DB result
+        const finalExp = { ...localExp }
+        if (settings.pronunciation === 'UK' && finalExp.ipa_uk) {
+          finalExp.ipa = formatIPA(finalExp.ipa_uk)
+        } else if (settings.pronunciation === 'US' && finalExp.ipa_us) {
+          finalExp.ipa = formatIPA(finalExp.ipa_us)
+        } else {
+          finalExp.ipa = formatIPA(finalExp.ipa)
+        }
+
+        setSelection({ text, rect, explanation: finalExp, isSaved: false })
         return
       }
 

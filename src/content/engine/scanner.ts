@@ -6,14 +6,26 @@ import { formatIPA } from '../../common/utils/format'
 
 const IGNORE_TAGS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'NOSCRIPT', 'CODE', 'PRE'])
 
-export const scanAndHighlight = (
+// Helper to extract candidate words (3+ letters) from text nodes
+// This is a "pre-scan" to know what to query from DB
+const extractCandidates = (text: string): string[] => {
+  const matches = text.match(/\b[a-zA-Z]{3,}\b/g)
+  return matches || []
+}
+
+export const scanAndHighlight = async (
   root: HTMLElement | Document, 
   level: ProficiencyLevel, 
   vocabulary: Set<string> = new Set(),
-  dynamicDict: Record<string, WordExplanation> = {},
-  pronunciation: 'UK' | 'US' = 'US'
+  // "userDict" contains local user vocab. 
+  // "dbLookup" is the new async function to query the huge IndexedDB
+  userDict: Record<string, WordExplanation> = {},
+  pronunciation: 'UK' | 'US' = 'US',
+  dbLookup?: (words: string[]) => Promise<Record<string, WordExplanation>>
 ) => {
   console.log('Scanning for level:', level, 'Pronunciation:', pronunciation)
+  
+  // 1. Collect all text nodes
   const walker = document.createTreeWalker(
     root,
     NodeFilter.SHOW_TEXT,
@@ -32,12 +44,40 @@ export const scanAndHighlight = (
   )
 
   const nodesToProcess: Text[] = []
+  const allCandidateWords: Set<string> = new Set()
+
   while (walker.nextNode()) {
-    nodesToProcess.push(walker.currentNode as Text)
+    const node = walker.currentNode as Text
+    if (node.nodeValue && node.nodeValue.trim()) {
+      nodesToProcess.push(node)
+      // Collect words to query
+      extractCandidates(node.nodeValue).forEach(w => allCandidateWords.add(w))
+    }
   }
 
-  console.log(`Found ${nodesToProcess.length} text nodes to process`)
-  nodesToProcess.forEach(node => processTextNode(node, level, vocabulary, dynamicDict, pronunciation))
+  console.log(`Found ${nodesToProcess.length} text nodes. Unique candidates: ${allCandidateWords.size}`)
+
+  // 2. Batch Lookup in IndexedDB
+  // Combine UserDict (priority) with DB results
+  let combinedDict = { ...userDict }
+  
+  if (dbLookup && allCandidateWords.size > 0) {
+    try {
+      // Filter out words we already have in userDict to save DB time
+      const missingWords = Array.from(allCandidateWords).filter(w => !userDict[w.toLowerCase()])
+      if (missingWords.length > 0) {
+        console.time('DBLookup')
+        const dbResults = await dbLookup(missingWords)
+        console.timeEnd('DBLookup')
+        combinedDict = { ...combinedDict, ...dbResults }
+      }
+    } catch (e) {
+      console.error('Batch DB lookup failed', e)
+    }
+  }
+
+  // 3. Process Nodes with the fully populated dictionary
+  nodesToProcess.forEach(node => processTextNode(node, level, vocabulary, combinedDict, pronunciation))
 }
 
 export const clearHighlights = (root: HTMLElement | Document = document) => {
@@ -65,6 +105,8 @@ const processTextNode = (
 
   const matches = analyzeText(text, level, vocabulary, dynamicDict, pronunciation)
   
+  if (matches.length === 0) return // Skip if no matches
+
   const fragment = document.createDocumentFragment()
   let lastIndex = 0
 

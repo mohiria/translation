@@ -1,43 +1,33 @@
 import { WordExplanation, DictTag } from '../types'
+import { checkAndUpdateDictionary, batchLookupWords, initDB } from './indexed-db'
 
-interface DictEntry {
-  word: string
-  ipa?: string
-  meaning: string
-  tags?: DictTag[]
-}
-
+// This interface matches the old one for compatibility, 
+// but internally we now use IndexedDB
 export const loadRemoteDictionary = async (): Promise<Record<string, WordExplanation>> => {
   try {
-    const url = chrome.runtime.getURL('dictionaries/core-vocab.json')
-    console.log('Fetching dictionary from:', url)
+    console.log('Initializing Dictionary System (IndexedDB)...')
     
-    const response = await fetch(url)
-    const data: DictEntry[] = await response.json()
+    // 1. Ensure DB is ready and trigger background update
+    await initDB()
     
-    // Convert array to map for fast lookup
-    const dictMap: Record<string, WordExplanation> = {}
-    data.forEach(entry => {
-      dictMap[entry.word.toLowerCase()] = {
-        word: entry.word,
-        ipa: entry.ipa,
-        meaning: entry.meaning,
-        tags: entry.tags
-      }
-    })
+    // Fire and forget update check (don't block initial load)
+    checkAndUpdateDictionary().catch(err => console.error('Background dict update failed', err))
     
-    // Save to local storage for persistence
-    await chrome.storage.local.set({ 'cached_dictionary': dictMap })
-    console.log(`Loaded ${data.length} words into dictionary cache`)
+    // For backward compatibility with the sync synchronous logic of the old scanner,
+    // we return an empty object here. The new scanner MUST use batchLookupWords()
+    // instead of expecting a full dictionary dump in memory.
+    // 
+    // Returning empty object signals "Dynamic Mode" to the new scanner.
+    return {} 
     
-    return dictMap
   } catch (e) {
-    console.error('Failed to load remote dictionary:', e)
+    console.error('Failed to init dictionary:', e)
     return {}
   }
 }
 
+// Keeping this for backward compatibility, but it's deprecated.
+// Components should use batchLookupWords or lookupWordInDB
 export const getCachedDictionary = async (): Promise<Record<string, WordExplanation>> => {
-  const result = await chrome.storage.local.get('cached_dictionary')
-  return result.cached_dictionary || {}
+  return {}
 }

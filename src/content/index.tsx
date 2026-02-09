@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom/client'
 import { scanAndHighlight, clearHighlights } from './engine/scanner'
 import { getSettings } from '../common/storage/settings'
 import { getVocabulary } from '../common/storage/vocabulary'
-import { loadRemoteDictionary, getCachedDictionary } from '../common/storage/dictionary-loader'
+import { loadRemoteDictionary } from '../common/storage/dictionary-loader'
+import { batchLookupWords } from '../common/storage/indexed-db'
 import { Overlay } from './components/Overlay'
 import { SelectionPopup } from './components/SelectionPopup'
 
@@ -30,26 +31,48 @@ root.render(
   </>
 )
 
-const init = async () => {
+const runScan = async () => {
   const settings = await getSettings()
-  if (settings.enabled) {
-    const vocabList = await getVocabulary()
-    const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
-    
-    let dynamicDict = await getCachedDictionary()
-    if (Object.keys(dynamicDict).length === 0) {
-      dynamicDict = await loadRemoteDictionary()
-    }
-
-    // CRITICAL: Merge vocabulary into dynamicDict so saved words (especially from AI) 
-    // can be found even if they are not in the official dictionary.
-    const vocabMap: Record<string, any> = {}
-    vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
-    const combinedDict = { ...dynamicDict, ...vocabMap }
-
-    console.log('Initial scan. Vocab:', vocabSet.size, 'Dict:', Object.keys(combinedDict).length)
-    scanAndHighlight(document.body, settings.proficiency, vocabSet, combinedDict, settings.pronunciation)
+  
+  // Always clear first to reset the page state
+  clearHighlights()
+  
+  if (!settings.enabled) {
+    return
   }
+  
+  const vocabList = await getVocabulary()
+  const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
+  
+  // Create a temporary map for user vocabulary
+  const vocabMap: Record<string, any> = {}
+  vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
+
+  console.log('Starting scan. Vocab size:', vocabSet.size)
+  
+  // We now pass a callback or specific lookup logic to scanner, 
+  // but since we refactored scanner to take a dict object, 
+  // we need to bridge the gap.
+  // 
+  // STRATEGY: 
+  // 1. Identify words on screen first (cheap).
+  // 2. Batch lookup them in IndexedDB (fast).
+  // 3. Pass the result to the highlighter.
+  
+  await scanAndHighlight(
+    document.body, 
+    settings.proficiency, 
+    vocabSet, 
+    vocabMap, // Pass user vocab as base dict
+    settings.pronunciation,
+    batchLookupWords // New: Pass the async lookup function
+  )
+}
+
+const init = async () => {
+  // Initialize DB and trigger update check
+  await loadRemoteDictionary()
+  await runScan()
 }
 
 // Listen for settings changes
@@ -58,48 +81,28 @@ chrome.storage.onChanged.addListener(async (changes, areaName) => {
   const isLocalChange = areaName === 'local' && (changes.settings || changes.vocabulary)
   
   if (isSyncChange || isLocalChange) {
-    const settings = await getSettings()
-    console.log('Settings changed, refreshing highlights. Pronunciation:', settings.pronunciation)
-    
-    if (!settings.enabled) {
-      clearHighlights()
-    } else {
-      const vocabList = await getVocabulary()
-      const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
-      const dynamicDict = await getCachedDictionary()
-      
-      const vocabMap: Record<string, any> = {}
-      vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
-      const combinedDict = { ...dynamicDict, ...vocabMap }
-      
-      clearHighlights() 
-      scanAndHighlight(document.body, settings.proficiency, vocabSet, combinedDict, settings.pronunciation)
-    }
+    console.log('Settings/Vocab changed, refreshing...')
+    await runScan()
   }
 })
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     init()
-    const observer = new MutationObserver(async (mutations) => {
-      const settings = await getSettings()
-      if (!settings.enabled) return
-
-      const vocabList = await getVocabulary()
-      const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
-      const dynamicDict = await getCachedDictionary()
-      
-      const vocabMap: Record<string, any> = {}
-      vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
-      const combinedDict = { ...dynamicDict, ...vocabMap }
-
-      mutations.forEach(mutation => {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            scanAndHighlight(node as HTMLElement, settings.proficiency, vocabSet, combinedDict, settings.pronunciation)
-          }
-        })
-      })
+    
+    // Debounced mutation observer to avoid thrashing
+    let timeout: any = null
+    const observer = new MutationObserver((mutations) => {
+      if (timeout) clearTimeout(timeout)
+      timeout = setTimeout(async () => {
+        const settings = await getSettings()
+        if (settings.enabled) {
+          // Ideally we scan only added nodes, but for simplicity/robustness with async DB:
+          // We might need a more targeted approach later. For now, re-scan body is safest 
+          // to ensure all new async words are caught.
+           await runScan()
+        }
+      }, 1000)
     })
     observer.observe(document.body, { childList: true, subtree: true })
   })
