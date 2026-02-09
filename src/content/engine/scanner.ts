@@ -63,7 +63,7 @@ const processTextNode = (
   const text = node.nodeValue
   if (!text || !text.trim()) return
 
-  const matches = analyzeText(text, level, vocabulary, dynamicDict)
+  const matches = analyzeText(text, level, vocabulary, dynamicDict, pronunciation)
   
   const fragment = document.createDocumentFragment()
   let lastIndex = 0
@@ -84,13 +84,8 @@ const processTextNode = (
     container.style.lineHeight = '1.2'
     container.style.transition = 'background-color 0.2s'
 
-    // If it's a dynamic explanation (like from LLM/saved), ensure the IPA is correct for current setting
-    let finalExplanation = { ...match.explanation }
-    if (pronunciation === 'UK' && finalExplanation.ipa_uk) {
-      finalExplanation.ipa = finalExplanation.ipa_uk
-    } else if (pronunciation === 'US' && finalExplanation.ipa_us) {
-      finalExplanation.ipa = finalExplanation.ipa_us
-    }
+    // The explanation object already has the correct regional IPA from analyzeText
+    const finalExplanation = match.explanation
 
     const span = document.createElement('span')
     span.textContent = match.word

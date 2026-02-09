@@ -61,12 +61,19 @@ export const SelectionPopup = () => {
 
       if (isSaved) {
         const savedItem = vocab.find(v => v.word.toLowerCase() === text.toLowerCase())
+        const localEntry = lookupWord(text, settings.pronunciation)
+        
         // Update the saved item's IPA based on current preference if it has both
         const processedSavedItem = { ...savedItem! }
-        if (settings.pronunciation === 'UK' && processedSavedItem.ipa_uk) {
-          processedSavedItem.ipa = processedSavedItem.ipa_uk
-        } else if (settings.pronunciation === 'US' && processedSavedItem.ipa_us) {
-          processedSavedItem.ipa = processedSavedItem.ipa_us
+        const ipa_uk = processedSavedItem.ipa_uk || localEntry?.ipa_uk
+        const ipa_us = processedSavedItem.ipa_us || localEntry?.ipa_us
+
+        if (settings.pronunciation === 'UK' && ipa_uk) {
+          processedSavedItem.ipa = formatIPA(ipa_uk)
+        } else if (settings.pronunciation === 'US' && ipa_us) {
+          processedSavedItem.ipa = formatIPA(ipa_us)
+        } else {
+          processedSavedItem.ipa = formatIPA(processedSavedItem.ipa)
         }
         
         setSelection({ text, rect, explanation: processedSavedItem, isSaved: true })

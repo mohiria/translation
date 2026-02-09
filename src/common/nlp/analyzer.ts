@@ -30,18 +30,27 @@ export const analyzeText = (
     const isSavedWord = vocabulary.has(lowerWord)
     
     // Check priority: Vocabulary Book / Dynamic Dict > Built-in dictionary
-    let explanation = dynamicDict[lowerWord] || lookupWord(word, pronunciation)
+    const localEntry = lookupWord(word, pronunciation)
+    let explanation = dynamicDict[lowerWord] || localEntry
 
     if (!explanation) continue
     
-    // If it's a dynamic explanation (like from LLM/saved), ensure the IPA is correct for current setting
+    // If it's a dynamic explanation (like from LLM/saved/remote JSON), 
+    // ensure the IPA is correct for current setting.
+    // We also merge with localEntry to get regional IPAs if dynamicDict is missing them.
     if (dynamicDict[lowerWord]) {
       explanation = { ...explanation }
-      if (pronunciation === 'UK' && explanation.ipa_uk) {
-        explanation.ipa = formatIPA(explanation.ipa_uk)
-      } else if (pronunciation === 'US' && explanation.ipa_us) {
-        explanation.ipa = formatIPA(explanation.ipa_us)
+      
+      // Use regional IPAs from dynamic entry if they exist, otherwise fallback to localEntry's regional data
+      const ipa_uk = explanation.ipa_uk || localEntry?.ipa_uk
+      const ipa_us = explanation.ipa_us || localEntry?.ipa_us
+
+      if (pronunciation === 'UK' && ipa_uk) {
+        explanation.ipa = formatIPA(ipa_uk)
+      } else if (pronunciation === 'US' && ipa_us) {
+        explanation.ipa = formatIPA(ipa_us)
       } else {
+        // Final fallback to whatever fixed IPA the dynamic entry had
         explanation.ipa = formatIPA(explanation.ipa)
       }
     }

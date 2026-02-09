@@ -39,7 +39,7 @@
   {"word": "platform", "ipa": "/ˈplætfɔːm/", "meaning": "平台", "tags": ["cet4"]},
   {"word": "network", "ipa": "/ˈnetwɜːk/", "meaning": "网络", "tags": ["cet4"]},
   {"word": "data", "ipa": "/ˈdeɪtə/", "meaning": "数据", "tags": ["cet4"]},
-  {"word": "privacy", "ipa": "/ˈprɪvəsi/", "meaning": "隐私", "tags": ["cet6"]},
+  {"word": "privacy", "ipa_us": "ˈpraɪvəsi", "ipa_uk": "ˈprɪvəsi", "meaning": "隐私", "tags": ["cet6"]},
   {"word": "security", "ipa": "/sɪˈkjʊərəti/", "meaning": "安全", "tags": ["cet4"]},
   {"word": "breach", "ipa": "/briːtʃ/", "meaning": "违背; 突破", "tags": ["cet6"]},
   {"word": "climate", "ipa": "/ˈklaɪmət/", "meaning": "气候", "tags": ["cet4"]},
