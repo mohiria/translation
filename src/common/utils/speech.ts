@@ -1,47 +1,67 @@
 /**
  * Play text-to-speech for a given word or phrase
- * Improved with engine wake-up and fallback logic.
  */
+
+let cachedVoice: SpeechSynthesisVoice | null = null;
+
+// Pre-warm the TTS engine
+const warmUpTTS = () => {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    // Prefer local voices to reduce network latency
+    cachedVoice = voices.find(v => (v.lang === 'en-US' || v.lang === 'en_US') && v.localService) || 
+                  voices.find(v => v.lang.startsWith('en') && v.localService) ||
+                  voices.find(v => v.lang.startsWith('en')) || 
+                  voices[0];
+  }
+};
+
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  warmUpTTS();
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = warmUpTTS;
+  }
+}
+
 export const speak = (text: string, lang: string = 'en-US') => {
   const synth = window.speechSynthesis;
-  if (!synth) {
-    console.error('Speech synthesis not supported in this browser.');
-    return;
-  }
+  if (!synth) return;
 
-  // 1. Important: Chrome sometimes needs a cancel() to wake up the engine
+  // Interrupt previous speech
   synth.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
-  
-  // 2. Set language and basic properties
   utterance.lang = lang;
-  utterance.rate = 0.85; // Slightly slower for clarity
+  utterance.rate = 1.0; 
   utterance.pitch = 1.0;
   utterance.volume = 1.0;
 
-  // 3. Robust Voice Selection
-  // Sometimes en-US isn't the first one, we try to find any English voice
-  const voices = synth.getVoices();
-  if (voices.length > 0) {
-    const englishVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
-    utterance.voice = englishVoice;
+  // Try to find a specific voice for the requested language if cached one doesn't match
+  if (cachedVoice && cachedVoice.lang.startsWith(lang.split('-')[0])) {
+    utterance.voice = cachedVoice;
+  } else {
+    const voices = synth.getVoices();
+    const foundVoice = voices.find(v => v.lang === lang && v.localService) || 
+                       voices.find(v => v.lang.startsWith(lang.split('-')[0]) && v.localService) ||
+                       voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+    if (foundVoice) utterance.voice = foundVoice;
   }
 
-  // 4. Debugging events
-  utterance.onstart = () => console.log(`TTS: Started speaking "${text}"`);
-  utterance.onerror = (event) => console.error('TTS: SpeechSynthesisUtterance error', event);
-  
-  // 5. Speak
-  synth.speak(utterance);
+  // Use a small timeout to let the cancel action propagate, avoiding "stuck" engine
+  setTimeout(() => {
+    synth.speak(utterance);
+  }, 10);
 
-  // 6. Bug fix for Chrome: if speech is long, it might stop halfway. 
-  // We keep the engine "alive" by checking the speaking state.
-  const keepAlive = setInterval(() => {
-    if (!synth.speaking) {
-      clearInterval(keepAlive);
-    } else {
-      synth.resume(); // Periodically resume to prevent timeout
-    }
-  }, 5000);
+  // Keep-alive only for long text
+  if (text.length > 100) {
+    const keepAlive = setInterval(() => {
+      if (!synth.speaking) {
+        clearInterval(keepAlive);
+      } else {
+        synth.resume();
+      }
+    }, 5000);
+  }
 }
