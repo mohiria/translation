@@ -34,38 +34,30 @@ root.render(
 const runScan = async () => {
   const settings = await getSettings()
   
-  // Always clear first to reset the page state
-  clearHighlights()
-  
   if (!settings.enabled) {
+    clearHighlights()
     return
   }
   
   const vocabList = await getVocabulary()
   const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
   
-  // Create a temporary map for user vocabulary
   const vocabMap: Record<string, any> = {}
   vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
 
-  console.log('Starting scan. Vocab size:', vocabSet.size)
+  console.log('Preparing scan data...')
   
-  // We now pass a callback or specific lookup logic to scanner, 
-  // but since we refactored scanner to take a dict object, 
-  // we need to bridge the gap.
-  // 
-  // STRATEGY: 
-  // 1. Identify words on screen first (cheap).
-  // 2. Batch lookup them in IndexedDB (fast).
-  // 3. Pass the result to the highlighter.
+  // Note: We DO NOT clearHighlights() here anymore to avoid flickering.
+  // The scanner will handle clearing internally just before drawing.
   
   await scanAndHighlight(
     document.body, 
     settings.proficiency, 
     vocabSet, 
-    vocabMap, // Pass user vocab as base dict
+    vocabMap, 
     settings.pronunciation,
-    batchLookupWords // New: Pass the async lookup function
+    batchLookupWords,
+    true // Pass a flag to indicate it should clear old ones just before drawing
   )
 }
 

@@ -21,11 +21,13 @@ export const scanAndHighlight = async (
   // "dbLookup" is the new async function to query the huge IndexedDB
   userDict: Record<string, WordExplanation> = {},
   pronunciation: 'UK' | 'US' = 'US',
-  dbLookup?: (words: string[]) => Promise<Record<string, WordExplanation>>
+  dbLookup?: (words: string[]) => Promise<Record<string, WordExplanation>>,
+  shouldClear: boolean = false
 ) => {
   console.log('Scanning for level:', level, 'Pronunciation:', pronunciation)
   
-  // 1. Collect all text nodes
+  // 1. Collect all text nodes (Scan the RAW text, even if highlighted)
+  // To scan even highlighted text, we need to temporarily ignore the rejection
   const walker = document.createTreeWalker(
     root,
     NodeFilter.SHOW_TEXT,
@@ -35,7 +37,9 @@ export const scanAndHighlight = async (
         if (!parent || IGNORE_TAGS.has(parent.tagName) || parent.isContentEditable) {
           return NodeFilter.FILTER_REJECT
         }
-        if (parent.closest('.ll-word-container')) {
+        // If we ARE going to clear anyway, we can scan everything.
+        // If not, we skip already highlighted ones.
+        if (!shouldClear && parent.closest('.ll-word-container')) {
           return NodeFilter.FILTER_REJECT
         }
         return NodeFilter.FILTER_ACCEPT
@@ -50,25 +54,18 @@ export const scanAndHighlight = async (
     const node = walker.currentNode as Text
     if (node.nodeValue && node.nodeValue.trim()) {
       nodesToProcess.push(node)
-      // Collect words to query
       extractCandidates(node.nodeValue).forEach(w => allCandidateWords.add(w))
     }
   }
 
-  console.log(`Found ${nodesToProcess.length} text nodes. Unique candidates: ${allCandidateWords.size}`)
-
-  // 2. Batch Lookup in IndexedDB
-  // Combine UserDict (priority) with DB results
+  // 2. Batch Lookup in IndexedDB (Heavy async work)
   let combinedDict = { ...userDict }
   
   if (dbLookup && allCandidateWords.size > 0) {
     try {
-      // Filter out words we already have in userDict to save DB time
       const missingWords = Array.from(allCandidateWords).filter(w => !userDict[w.toLowerCase()])
       if (missingWords.length > 0) {
-        console.time('DBLookup')
         const dbResults = await dbLookup(missingWords)
-        console.timeEnd('DBLookup')
         combinedDict = { ...combinedDict, ...dbResults }
       }
     } catch (e) {
@@ -76,8 +73,18 @@ export const scanAndHighlight = async (
     }
   }
 
-  // 3. Process Nodes with the fully populated dictionary
-  nodesToProcess.forEach(node => processTextNode(node, level, vocabulary, combinedDict, pronunciation))
+  // 3. THE MOMENT OF TRUTH: Clear and Re-draw in the same task
+  if (shouldClear) {
+    clearHighlights(root)
+  }
+
+  // 4. Process Nodes with the fully populated dictionary
+  nodesToProcess.forEach(node => {
+    // Check if node is still in DOM (clearing might have replaced its parent)
+    if (node.parentNode) {
+      processTextNode(node, level, vocabulary, combinedDict, pronunciation)
+    }
+  })
 }
 
 export const clearHighlights = (root: HTMLElement | Document = document) => {
@@ -118,13 +125,21 @@ const processTextNode = (
     const container = document.createElement('span')
     container.className = 'll-word-container'
     
-    container.style.backgroundColor = 'rgba(75, 139, 245, 0.12)'
+    // Smooth Transition Styles
+    container.style.backgroundColor = 'rgba(75, 139, 245, 0)' // Start transparent
     container.style.borderRadius = '3px'
-    container.style.padding = '0 4px'
-    container.style.margin = '0 2px'
-    container.style.display = 'inline-block' 
-    container.style.lineHeight = '1.2'
-    container.style.transition = 'background-color 0.2s'
+    container.style.padding = '1px 2px'
+    container.style.margin = '0 1px'
+    container.style.display = 'inline' // Use inline to prevent line-height jumps
+    container.style.transition = 'all 0.4s ease'
+    container.style.cursor = 'pointer'
+    container.style.borderBottom = '1px solid transparent'
+
+    // Trigger fade-in after a micro-task to allow DOM insertion
+    setTimeout(() => {
+      container.style.backgroundColor = 'rgba(75, 139, 245, 0.15)'
+      container.style.borderBottom = '1px solid rgba(75, 139, 245, 0.3)'
+    }, 10)
 
     // The explanation object already has the correct regional IPA from analyzeText
     const finalExplanation = match.explanation
@@ -134,7 +149,6 @@ const processTextNode = (
     span.className = 'll-word'
     span.style.fontWeight = 'bold'
     span.style.color = 'inherit'
-    span.style.cursor = 'pointer'
     
     span.onclick = async (e) => {
       e.stopPropagation()
@@ -144,22 +158,20 @@ const processTextNode = (
         sourceUrl: window.location.href
       }
       await addToVocabulary(savedWord)
-      container.style.backgroundColor = 'rgba(75, 139, 245, 0.3)'
+      container.style.backgroundColor = 'rgba(75, 139, 245, 0.4)'
     }
     
     container.appendChild(span)
 
-    // Voice Icon
+    // Voice Icon (Smaller and more subtle)
     const voiceBtn = document.createElement('span')
     voiceBtn.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: -2px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; opacity: 0.6;">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
         <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
       </svg>
     `
-    voiceBtn.style.marginLeft = '4px'
-    voiceBtn.style.cursor = 'pointer'
-    voiceBtn.style.color = '#666'
+    voiceBtn.style.marginLeft = '2px'
     voiceBtn.style.display = 'inline-flex'
     voiceBtn.style.alignItems = 'center'
     voiceBtn.title = `Listen (${pronunciation})`
@@ -179,12 +191,11 @@ const processTextNode = (
     
     translation.textContent = ` (${ipaPart}${separator}${finalExplanation.meaning})`
     
-    translation.style.color = '#555' 
-    translation.style.fontSize = '0.85em'
-    translation.style.marginLeft = '6px'
+    translation.style.color = '#666' 
+    translation.style.fontSize = '0.8em'
+    translation.style.marginLeft = '4px'
     translation.style.fontWeight = 'normal'
-    translation.style.letterSpacing = '0.05em'
-    translation.style.opacity = '0.9'
+    translation.style.opacity = '0.8'
     
     container.appendChild(translation)
     fragment.appendChild(container)
