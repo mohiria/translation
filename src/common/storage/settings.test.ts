@@ -26,7 +26,7 @@ describe('Settings Storage', () => {
 
   it('should return default settings if nothing is stored', async () => {
     const settings = await getSettings()
-    expect(settings.proficiency).toBe('CET4')
+    expect(settings.proficiency).toBe('CEFR_A1')
     expect(settings.showIPA).toBe(true)
   })
 
@@ -66,7 +66,7 @@ describe('Settings Storage', () => {
   it('should call chrome.storage.sync.set when saving settings', async () => {
     const newSettings: UserSettings = { 
       enabled: true, 
-      proficiency: 'CET6', 
+      proficiency: 'CEFR_C1', 
       showIPA: true, 
       pronunciation: 'US',
       engine: 'llm',

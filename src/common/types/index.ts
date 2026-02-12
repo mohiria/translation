@@ -1,4 +1,4 @@
-export type ProficiencyLevel = 'CET4' | 'CET6' | 'CEFR_A1' | 'CEFR_A2' | 'CEFR_B1' | 'CEFR_B2' | 'CEFR_C1' | 'CEFR_C2'
+export type ProficiencyLevel = 'CEFR_A1' | 'CEFR_A2' | 'CEFR_B1' | 'CET4' | 'CET6' | 'CEFR_C1' | 'CEFR_C2'
 
 export type DictTag = 'zk' | 'gk' | 'cet4' | 'cet6' | 'ky' | 'ielts' | 'toefl' | 'gre' | 'a1' | 'a2' | 'b1' | 'b2' | 'c1' | 'c2'
 

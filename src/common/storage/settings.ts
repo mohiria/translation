@@ -2,7 +2,7 @@ import { UserSettings } from '../types'
 
 const DEFAULT_SETTINGS: UserSettings = {
   enabled: false,
-  proficiency: 'CET4',
+  proficiency: 'CEFR_A1',
   showIPA: true,
   pronunciation: 'US',
   engine: 'google',

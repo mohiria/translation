@@ -20,11 +20,13 @@ export const TAG_LEVEL_MAP: Record<DictTag, number> = {
 }
 
 export const USER_LEVEL_RANK: Record<ProficiencyLevel, number> = {
-  'CEFR_A1': 1, 'CEFR_A2': 1.5,
-  'CEFR_B1': 2, 'CEFR_B2': 3, // B1 is rank 2 (GK level), B2 is rank 3/4
-  'CET4': 3, 
-  'CET6': 4, 
-  'CEFR_C1': 5, 'CEFR_C2': 6
+  'CEFR_A1': 1, 
+  'CEFR_A2': 1.5,
+  'CEFR_B1': 2, 
+  'CET4': 3,
+  'CET6': 4,
+  'CEFR_C1': 5, 
+  'CEFR_C2': 6
 }
 
 // ---------------------------------------------------------------------------
