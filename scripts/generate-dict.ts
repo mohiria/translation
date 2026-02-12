@@ -26,7 +26,35 @@ const main = async () => {
         const rawEntries = Object.values(data);
         console.log(`Loaded ${rawEntries.length} entries from Oxford source.`);
 
+        // Helper to clean translation
+        const cleanTranslation = (word: string, fullTranslation: string) => {
+            if (!fullTranslation) return '';
+
+            // 1. Remove content inside () or （）
+            let short = fullTranslation.replace(/[\(\（].*?[\)\）]/g, ' ').trim();
+            
+            // 2. Clean up leading/trailing punctuation and extra spaces
+            short = short.replace(/\s+/g, ' ')
+                         .replace(/^[，,；;：:、]+|[，,；;：:、]+$/g, '')
+                         .trim();
+
+            // 3. Fallback: If removing brackets resulted in empty string
+            if (!short) {
+                const match = fullTranslation.match(/[\(\（](.*?)[\)\）]/);
+                if (match && match[1]) {
+                    short = match[1].trim();
+                } else {
+                    short = fullTranslation;
+                }
+            }
+            
+            return short;
+        };
+
         entries = rawEntries.map((item: any) => {
+            const fullTranslation = item.translation || '';
+            const shortTranslation = cleanTranslation(item.word, fullTranslation);
+
             return {
                 word: item.word,
                 type: item.type,
@@ -36,11 +64,21 @@ const main = async () => {
                 ipa_us: item.phon_n_am,
                 definition: item.definition,
                 example: item.example,
-                translation: item.translation,
-                meaning: item.translation, // Use translation as primary meaning for display
-                context: item.example,     // Use example as primary context
+                translation: fullTranslation,      // FULL version for popup
+                short_translation: shortTranslation, 
+                meaning: shortTranslation,          // SHORT version for inline display
+                context: item.example,
                 source: 'Oxford 5000'
             };
+        });
+
+        // Debug log for some problematic words
+        const testWords = ['switch', 'schedule', 'a', 'do'];
+        testWords.forEach(w => {
+            const entry = entries.find(e => e.word === w);
+            if (entry) {
+                console.log(`Cleaned "${w}": "${entry.translation}" -> "${entry.meaning}"`);
+            }
         });
     } else {
         console.error('Oxford source file not found at:', OXFORD_SOURCE);

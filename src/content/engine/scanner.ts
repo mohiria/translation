@@ -202,7 +202,8 @@ const processTextNode = (
     const separator = ipaPart ? ' · ' : ''
     
     // Set text content immediately to prevent size changes later
-    translation.textContent = ` (${ipaPart}${separator}${finalExplanation.meaning})`
+    const displayMeaning = finalExplanation.short_translation || finalExplanation.meaning;
+    translation.textContent = ` (${ipaPart}${separator}${displayMeaning})`
     
     translation.style.color = '#666' 
     translation.style.fontSize = '0.8em'

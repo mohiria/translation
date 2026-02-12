@@ -47,8 +47,8 @@ export const checkAndUpdateDictionary = async () => {
 
   try {
     // 2. Fetch remote version manifest
-    // In production, this points to your CDN, e.g., 'https://cdn.example.com/dict/version.json'
-    const versionUrl = chrome.runtime.getURL('data/version.json'); 
+    // Add cache-buster to ensure we get the latest version info
+    const versionUrl = chrome.runtime.getURL(`data/version.json?t=${Date.now()}`); 
     const versionRes = await fetch(versionUrl);
     if (!versionRes.ok) throw new Error('Failed to check version');
     
@@ -72,7 +72,7 @@ const downloadAndImportDictionary = async (db: IDBPDatabase<DictionaryDB>, newVe
   console.log('Starting dictionary download...');
   
   // 1. Download Gzipped JSON
-  const dictUrl = chrome.runtime.getURL('data/dictionary-core.json.gz');
+  const dictUrl = chrome.runtime.getURL(`data/dictionary-core.json.gz?t=${newVersion}`);
   const response = await fetch(dictUrl);
   const buffer = await response.arrayBuffer();
   

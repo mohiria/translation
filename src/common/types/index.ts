@@ -38,6 +38,7 @@ export interface WordExplanation {
   definition?: string
   example?: string
   translation?: string
+  short_translation?: string
 }
 
 export interface SavedWord extends WordExplanation {
