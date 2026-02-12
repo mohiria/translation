@@ -48,7 +48,9 @@
     {
       "matches": ["<all_urls>"],
       "resources": [
-        "dictionaries/core-vocab.json"
+        "dictionaries/core-vocab.json",
+        "data/version.json",
+        "data/dictionary-core.json.gz"
       ]
     }
   ]

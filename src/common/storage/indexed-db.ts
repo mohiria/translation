@@ -3,7 +3,7 @@ import pako from 'pako';
 import { WordExplanation, DictTag } from '../types';
 
 const DB_NAME = 'll_dictionary_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'words';
 const META_STORE = 'meta';
 

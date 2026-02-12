@@ -70,16 +70,41 @@ export const Tooltip: React.FC<TooltipProps> = ({ explanation, onClose, position
             {settings?.pronunciation === 'UK' ? 'UK' : 'US'}
           </span>
           {formatIPA(explanation.ipa)}
+          {explanation.type && (
+            <span style={{ marginLeft: '8px', fontStyle: 'italic', color: '#888' }}>
+              {explanation.type}
+            </span>
+          )}
+          {explanation.cefr && (
+            <span style={{ 
+              marginLeft: '8px', 
+              fontSize: '10px', 
+              backgroundColor: '#e8f0fe', 
+              color: '#1a73e8', 
+              padding: '1px 4px', 
+              borderRadius: '4px',
+              textTransform: 'uppercase',
+              fontWeight: 'bold'
+            }}>
+              {explanation.cefr}
+            </span>
+          )}
         </div>
       )}
       
-      <div style={{ fontSize: '14px', lineHeight: '1.4' }}>
-        {explanation.meaning}
+      <div style={{ fontSize: '14px', lineHeight: '1.4', fontWeight: 500 }}>
+        {explanation.translation || explanation.meaning}
       </div>
+
+      {explanation.definition && (
+        <div style={{ marginTop: '4px', fontSize: '12px', color: '#666', lineHeight: '1.3' }}>
+          {explanation.definition}
+        </div>
+      )}
       
-      {explanation.context && (
-        <div style={{ marginTop: '8px', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
-          "{explanation.context}"
+      {(explanation.example || explanation.context) && (
+        <div style={{ marginTop: '8px', fontSize: '12px', color: '#888', fontStyle: 'italic', borderLeft: '2px solid #eee', paddingLeft: '8px' }}>
+          "{explanation.example || explanation.context}"
         </div>
       )}
     </div>

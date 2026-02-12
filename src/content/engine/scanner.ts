@@ -26,8 +26,12 @@ export const scanAndHighlight = async (
 ) => {
   console.log('Scanning for level:', level, 'Pronunciation:', pronunciation)
   
-  // 1. Collect all text nodes (Scan the RAW text, even if highlighted)
-  // To scan even highlighted text, we need to temporarily ignore the rejection
+  // 1. If we need to clear, do it FIRST so we get clean text nodes to walk
+  if (shouldClear) {
+    clearHighlights(root)
+  }
+
+  // 2. Collect all text nodes
   const walker = document.createTreeWalker(
     root,
     NodeFilter.SHOW_TEXT,
@@ -37,8 +41,7 @@ export const scanAndHighlight = async (
         if (!parent || IGNORE_TAGS.has(parent.tagName) || parent.isContentEditable) {
           return NodeFilter.FILTER_REJECT
         }
-        // If we ARE going to clear anyway, we can scan everything.
-        // If not, we skip already highlighted ones.
+        // Skip already highlighted ones if we didn't clear
         if (!shouldClear && parent.closest('.ll-word-container')) {
           return NodeFilter.FILTER_REJECT
         }
@@ -58,7 +61,7 @@ export const scanAndHighlight = async (
     }
   }
 
-  // 2. Batch Lookup in IndexedDB (Heavy async work)
+  // 3. Batch Lookup in IndexedDB
   let combinedDict = { ...userDict }
   
   if (dbLookup && allCandidateWords.size > 0) {
@@ -73,14 +76,8 @@ export const scanAndHighlight = async (
     }
   }
 
-  // 3. THE MOMENT OF TRUTH: Clear and Re-draw in the same task
-  if (shouldClear) {
-    clearHighlights(root)
-  }
-
-  // 4. Process Nodes with the fully populated dictionary
+  // 4. Process Nodes
   nodesToProcess.forEach(node => {
-    // Check if node is still in DOM (clearing might have replaced its parent)
     if (node.parentNode) {
       processTextNode(node, level, vocabulary, combinedDict, pronunciation)
     }
@@ -184,10 +181,10 @@ const processTextNode = (
     const translation = document.createElement('span')
     translation.className = 'll-translation'
     
-    // Use the correctly formatted IPA with UK/US label
+    // The explanation.ipa is already formatted with slashes by analyzeText
     const ipaLabel = pronunciation === 'UK' ? 'UK ' : 'US '
-    const separator = finalExplanation.ipa ? ' · ' : ''
-    const ipaPart = finalExplanation.ipa ? `${ipaLabel}${formatIPA(finalExplanation.ipa)}` : ''
+    const ipaPart = finalExplanation.ipa ? `${ipaLabel}${finalExplanation.ipa}` : ''
+    const separator = ipaPart ? ' · ' : ''
     
     translation.textContent = ` (${ipaPart}${separator}${finalExplanation.meaning})`
     

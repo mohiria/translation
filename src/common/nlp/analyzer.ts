@@ -17,8 +17,6 @@ export const analyzeText = (
   pronunciation: 'UK' | 'US' = 'US'
 ): IdentifiedWord[] => {
   const results: IdentifiedWord[] = []
-  
-  // Simple regex to split by non-word characters but keep offsets
   const regex = /\b[a-zA-Z]{3,}\b/g
   let match
   
@@ -26,35 +24,29 @@ export const analyzeText = (
     const word = match[0]
     const lowerWord = word.toLowerCase()
     
-    // Check priority: Vocabulary Book > Proficiency Level
-    const isSavedWord = vocabulary.has(lowerWord)
-    
-    // Check priority: Vocabulary Book / Dynamic Dict > Built-in dictionary
-    const localEntry = lookupWord(word, pronunciation)
-    let explanation = dynamicDict[lowerWord] || localEntry
+    // Priority: Dynamic/IndexedDB Dict > Built-in (which is empty now)
+    let explanation = dynamicDict[lowerWord] || lookupWord(word, pronunciation)
 
     if (!explanation) continue
     
-    // If it's a dynamic explanation (like from LLM/saved/remote JSON), 
-    // ensure the IPA is correct for current setting.
-    // We also merge with localEntry to get regional IPAs if dynamicDict is missing them.
-    if (dynamicDict[lowerWord]) {
-      explanation = { ...explanation }
-      
-      // Use regional IPAs from dynamic entry if they exist, otherwise fallback to localEntry's regional data
-      const ipa_uk = explanation.ipa_uk || localEntry?.ipa_uk
-      const ipa_us = explanation.ipa_us || localEntry?.ipa_us
+    // Create a copy to avoid mutating the source dict
+    explanation = { ...explanation }
 
-      if (pronunciation === 'UK' && ipa_uk) {
-        explanation.ipa = formatIPA(ipa_uk)
-      } else if (pronunciation === 'US' && ipa_us) {
-        explanation.ipa = formatIPA(ipa_us)
-      } else {
-        // Final fallback to whatever fixed IPA the dynamic entry had
-        explanation.ipa = formatIPA(explanation.ipa)
-      }
+    // Ensure we have the correct IPA for the current pronunciation preference
+    const pref = pronunciation.toUpperCase()
+    const ipa_uk = explanation.ipa_uk
+    const ipa_us = explanation.ipa_us
+
+    if (pref === 'UK' && ipa_uk) {
+      explanation.ipa = formatIPA(ipa_uk)
+    } else if (pref === 'US' && ipa_us) {
+      explanation.ipa = formatIPA(ipa_us)
+    } else if (!explanation.ipa) {
+      // Fallback if regional IPA is missing but general ipa exists
+      explanation.ipa = formatIPA(explanation.ipa || ipa_us || ipa_uk || '')
     }
 
+    const isSavedWord = vocabulary.has(lowerWord)
     const isHardEnough = checkDifficulty(explanation, userLevel)
     
     if (isSavedWord || isHardEnough) {

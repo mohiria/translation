@@ -237,7 +237,28 @@ export const SelectionPopup = () => {
                 {settings?.pronunciation === 'UK' ? 'UK' : 'US'} {formatIPA(selection.explanation.ipa)}
               </span>
             )}
-            <span style={{ fontWeight: 500 }}>{selection.explanation.meaning}</span>
+            {selection.explanation.type && (
+              <span style={{ fontStyle: 'italic', color: '#888', marginRight: '8px', fontSize: '0.8rem' }}>
+                {selection.explanation.type}
+              </span>
+            )}
+            {selection.explanation.cefr && (
+              <span style={{ 
+                marginRight: '8px', 
+                fontSize: '0.75rem', 
+                backgroundColor: '#e8f0fe', 
+                color: '#1a73e8', 
+                padding: '1px 4px', 
+                borderRadius: '4px',
+                textTransform: 'uppercase',
+                fontWeight: 'bold'
+              }}>
+                {selection.explanation.cefr}
+              </span>
+            )}
+          </div>
+          <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+            {selection.explanation.translation || selection.explanation.meaning}
           </div>
           <button
             onClick={handleToggleVocab}
