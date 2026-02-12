@@ -17,22 +17,17 @@ export const scanAndHighlight = async (
   root: HTMLElement | Document, 
   level: ProficiencyLevel, 
   vocabulary: Set<string> = new Set(),
-  // "userDict" contains local user vocab. 
-  // "dbLookup" is the new async function to query the huge IndexedDB
   userDict: Record<string, WordExplanation> = {},
   pronunciation: 'UK' | 'US' = 'US',
   dbLookup?: (words: string[]) => Promise<Record<string, WordExplanation>>,
-  shouldClear: boolean = false
+  shouldClear: boolean = false,
+  showIPA: boolean = true
 ) => {
-  console.log('Scanning for level:', level, 'Pronunciation:', pronunciation)
+  // 1. Collect all candidates first to minimize async gap
+  const allCandidateWords: Set<string> = new Set()
   
-  // 1. If we need to clear, do it FIRST so we get clean text nodes to walk
-  if (shouldClear) {
-    clearHighlights(root)
-  }
-
-  // 2. Collect all text nodes
-  const walker = document.createTreeWalker(
+  // We use a temporary walker to find candidates without disturbing the DOM
+  const candidateWalker = document.createTreeWalker(
     root,
     NodeFilter.SHOW_TEXT,
     {
@@ -41,29 +36,20 @@ export const scanAndHighlight = async (
         if (!parent || IGNORE_TAGS.has(parent.tagName) || parent.isContentEditable) {
           return NodeFilter.FILTER_REJECT
         }
-        // Skip already highlighted ones if we didn't clear
-        if (!shouldClear && parent.closest('.ll-word-container')) {
-          return NodeFilter.FILTER_REJECT
-        }
         return NodeFilter.FILTER_ACCEPT
       }
     }
   )
 
-  const nodesToProcess: Text[] = []
-  const allCandidateWords: Set<string> = new Set()
-
-  while (walker.nextNode()) {
-    const node = walker.currentNode as Text
-    if (node.nodeValue && node.nodeValue.trim()) {
-      nodesToProcess.push(node)
+  while (candidateWalker.nextNode()) {
+    const node = candidateWalker.currentNode as Text
+    if (node.nodeValue) {
       extractCandidates(node.nodeValue).forEach(w => allCandidateWords.add(w))
     }
   }
 
-  // 3. Batch Lookup in IndexedDB
+  // 2. Fetch all required dictionary data upfront
   let combinedDict = { ...userDict }
-  
   if (dbLookup && allCandidateWords.size > 0) {
     try {
       const missingWords = Array.from(allCandidateWords).filter(w => !userDict[w.toLowerCase()])
@@ -76,10 +62,38 @@ export const scanAndHighlight = async (
     }
   }
 
-  // 4. Process Nodes
+  // 3. Clear and re-scan in a single synchronous-like pass
+  if (shouldClear) {
+    clearHighlights(root)
+  }
+
+  // Now perform the actual processing
+  const walker = document.createTreeWalker(
+    root,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: (node) => {
+        const parent = node.parentElement
+        if (!parent || IGNORE_TAGS.has(parent.tagName) || parent.isContentEditable) {
+          return NodeFilter.FILTER_REJECT
+        }
+        if (parent.closest('.ll-word-container')) {
+          return NodeFilter.FILTER_REJECT
+        }
+        return NodeFilter.FILTER_ACCEPT
+      }
+    }
+  )
+
+  const nodesToProcess: Text[] = []
+  while (walker.nextNode()) {
+    nodesToProcess.push(walker.currentNode as Text)
+  }
+
+  // Process nodes
   nodesToProcess.forEach(node => {
     if (node.parentNode) {
-      processTextNode(node, level, vocabulary, combinedDict, pronunciation)
+      processTextNode(node, level, vocabulary, combinedDict, pronunciation, showIPA)
     }
   })
 }
@@ -102,7 +116,8 @@ const processTextNode = (
   level: ProficiencyLevel, 
   vocabulary: Set<string>,
   dynamicDict: Record<string, WordExplanation>,
-  pronunciation: 'UK' | 'US'
+  pronunciation: 'UK' | 'US',
+  showIPA: boolean = true
 ) => {
   const text = node.nodeValue
   if (!text || !text.trim()) return
@@ -183,16 +198,18 @@ const processTextNode = (
     
     // The explanation.ipa is already formatted with slashes by analyzeText
     const ipaLabel = pronunciation === 'UK' ? 'UK ' : 'US '
-    const ipaPart = finalExplanation.ipa ? `${ipaLabel}${finalExplanation.ipa}` : ''
+    const ipaPart = (showIPA && finalExplanation.ipa) ? `${ipaLabel}${finalExplanation.ipa}` : ''
     const separator = ipaPart ? ' · ' : ''
     
+    // Set text content immediately to prevent size changes later
     translation.textContent = ` (${ipaPart}${separator}${finalExplanation.meaning})`
     
     translation.style.color = '#666' 
     translation.style.fontSize = '0.8em'
     translation.style.marginLeft = '4px'
     translation.style.fontWeight = 'normal'
-    translation.style.opacity = '0.8'
+    translation.style.opacity = '0.7' // Slightly lower default opacity
+    translation.style.whiteSpace = 'nowrap' // Prevent breaking within translation
     
     container.appendChild(translation)
     fragment.appendChild(container)

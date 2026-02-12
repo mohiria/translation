@@ -57,7 +57,8 @@ const runScan = async () => {
     vocabMap, 
     settings.pronunciation,
     batchLookupWords,
-    true // Pass a flag to indicate it should clear old ones just before drawing
+    true, // Pass a flag to indicate it should clear old ones just before drawing
+    settings.showIPA
   )
 }
 
@@ -69,11 +70,31 @@ const init = async () => {
 
 // Listen for settings changes
 chrome.storage.onChanged.addListener(async (changes, areaName) => {
-  const isSyncChange = areaName === 'sync' && changes.settings
-  const isLocalChange = areaName === 'local' && (changes.settings || changes.vocabulary)
+  const isSyncSettingsChange = areaName === 'sync' && changes.settings
+  const isLocalVocabChange = areaName === 'local' && changes.vocabulary
   
-  if (isSyncChange || isLocalChange) {
-    console.log('Settings/Vocab changed, refreshing...')
+  if (isSyncSettingsChange) {
+    const oldSettings = changes.settings.oldValue
+    const newSettings = changes.settings.newValue
+    
+    if (!oldSettings || !newSettings) {
+      await runScan()
+      return
+    }
+
+    // Only re-scan if highlighting-relevant settings changed
+    const needsRescan = 
+      oldSettings.enabled !== newSettings.enabled ||
+      oldSettings.proficiency !== newSettings.proficiency ||
+      oldSettings.pronunciation !== newSettings.pronunciation ||
+      oldSettings.showIPA !== newSettings.showIPA
+    
+    if (needsRescan) {
+      console.log('Visual settings changed, refreshing highlights...')
+      await runScan()
+    }
+  } else if (isLocalVocabChange) {
+    console.log('Vocabulary changed, refreshing highlights...')
     await runScan()
   }
 })
