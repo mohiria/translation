@@ -22,10 +22,6 @@ const main = async () => {
         const content = fs.readFileSync(OXFORD_SOURCE, 'utf-8');
         const data = JSON.parse(content);
         
-        // Data is an object with numeric keys "0", "1", ...
-        const rawEntries = Object.values(data);
-        console.log(`Loaded ${rawEntries.length} entries from Oxford source.`);
-
         // Helper to clean translation
         const cleanTranslation = (word: string, fullTranslation: string) => {
             if (!fullTranslation) return '';
@@ -51,23 +47,84 @@ const main = async () => {
             return short;
         };
 
-        entries = rawEntries.map((item: any) => {
-            const fullTranslation = item.translation || '';
-            const shortTranslation = cleanTranslation(item.word, fullTranslation);
+        const rawEntries = Object.values(data);
+        console.log(`Loaded ${rawEntries.length} raw entries from Oxford source.`);
+
+        // Group by word
+        const groupedMap = new Map<string, any[]>();
+        rawEntries.forEach((item: any) => {
+            const word = item.word.toLowerCase();
+            if (!groupedMap.has(word)) groupedMap.set(word, []);
+            groupedMap.get(word)!.push(item);
+        });
+
+        console.log(`Grouped into ${groupedMap.size} unique words.`);
+
+        const typeAbbr: Record<string, string> = {
+            'noun': 'n.',
+            'verb': 'v.',
+            'adjective': 'adj.',
+            'adverb': 'adv.',
+            'preposition': 'prep.',
+            'pronoun': 'pron.',
+            'conjunction': 'conj.',
+            'determiner': 'det.',
+            'exclamation': 'int.',
+            'number': 'num.',
+            'modal verb': 'modal v.',
+            'auxiliary verb': 'aux v.'
+        };
+
+        entries = Array.from(groupedMap.entries()).map(([word, items]) => {
+            const definitions = items.map(item => {
+                const fullTranslation = item.translation || '';
+                return {
+                    type: item.type,
+                    cefr: item.cefr,
+                    definition: item.definition,
+                    example: item.example,
+                    translation: fullTranslation,
+                    short_translation: cleanTranslation(word, fullTranslation)
+                };
+            });
+
+            // Logic: Group by short_translation to merge same meanings
+            const transGroups = new Map<string, string[]>(); // meaning -> types[]
+            definitions.forEach(d => {
+                if (!transGroups.has(d.short_translation)) {
+                    transGroups.set(d.short_translation, []);
+                }
+                const abbr = typeAbbr[d.type.toLowerCase()] || d.type;
+                if (!transGroups.get(d.short_translation)!.includes(abbr)) {
+                    transGroups.get(d.short_translation)!.push(abbr);
+                }
+            });
+
+            // Construct combined meaning
+            const combinedMeaningParts: string[] = [];
+            transGroups.forEach((types, meaning) => {
+                combinedMeaningParts.push(`${types.join(', ')} ${meaning}`);
+            });
+            const meaning = combinedMeaningParts.join('; ');
+
+            // Construct combined types
+            const allTypes = Array.from(new Set(items.map(i => typeAbbr[i.type.toLowerCase()] || i.type)));
+            
+            // Get most advanced CEFR
+            const cefrOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+            const cefrs = items.map(i => i.cefr.toLowerCase());
+            const topCefr = cefrs.sort((a, b) => cefrOrder.indexOf(b) - cefrOrder.indexOf(a))[0];
 
             return {
-                word: item.word,
-                type: item.type,
-                cefr: item.cefr,
-                tags: [item.cefr.toLowerCase()],
-                ipa_uk: item.phon_br,
-                ipa_us: item.phon_n_am,
-                definition: item.definition,
-                example: item.example,
-                translation: fullTranslation,      // FULL version for popup
-                short_translation: shortTranslation, 
-                meaning: shortTranslation,          // SHORT version for inline display
-                context: item.example,
+                word: word,
+                ipa_uk: items[0].phon_br,
+                ipa_us: items[0].phon_n_am,
+                meaning: meaning,
+                type: allTypes.join(', '),
+                cefr: topCefr,
+                tags: Array.from(new Set(cefrs)),
+                context: items[0].example,
+                definitions: definitions,
                 source: 'Oxford 5000'
             };
         });
@@ -77,7 +134,7 @@ const main = async () => {
         testWords.forEach(w => {
             const entry = entries.find(e => e.word === w);
             if (entry) {
-                console.log(`Cleaned "${w}": "${entry.translation}" -> "${entry.meaning}"`);
+                console.log(`Merged "${w}": "${entry.meaning}"`);
             }
         });
     } else {

@@ -70,7 +70,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ explanation, onClose, position
             {settings?.pronunciation === 'UK' ? 'UK' : 'US'}
           </span>
           {formatIPA(explanation.ipa)}
-          {explanation.type && (
+          {explanation.type && (!explanation.definitions || explanation.definitions.length <= 1) && (
             <span style={{ marginLeft: '8px', fontStyle: 'italic', color: '#888' }}>
               {explanation.type}
             </span>
@@ -92,19 +92,35 @@ export const Tooltip: React.FC<TooltipProps> = ({ explanation, onClose, position
         </div>
       )}
       
-      <div style={{ fontSize: '14px', lineHeight: '1.4', fontWeight: 500 }}>
-        {explanation.translation || explanation.meaning}
+      <div style={{ fontSize: '14px', lineHeight: '1.4' }}>
+        {!explanation.definitions || explanation.definitions.length === 0 ? (
+          <div style={{ fontWeight: 500 }}>{explanation.meaning}</div>
+        ) : explanation.definitions.length === 1 ? (
+          <>
+            <div style={{ fontWeight: 500 }}>{explanation.definitions[0].translation}</div>
+            <div style={{ marginTop: '4px', fontSize: '12px', color: '#666', lineHeight: '1.3' }}>
+              {explanation.definitions[0].definition}
+            </div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {explanation.definitions.map((def, idx) => (
+              <div key={idx} style={{ borderBottom: idx < (explanation.definitions?.length || 0) - 1 ? '1px solid #f0f0f0' : 'none', paddingBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                  <span style={{ fontStyle: 'italic', color: '#888', fontSize: '11px' }}>{def.type}</span>
+                  <span style={{ fontSize: '10px', backgroundColor: '#f0f0f0', padding: '0 4px', borderRadius: '3px' }}>{def.cefr}</span>
+                </div>
+                <div style={{ fontWeight: 500 }}>{def.translation}</div>
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{def.definition}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {explanation.definition && (
-        <div style={{ marginTop: '4px', fontSize: '12px', color: '#666', lineHeight: '1.3' }}>
-          {explanation.definition}
-        </div>
-      )}
       
-      {(explanation.example || explanation.context) && (
+      {explanation.context && (
         <div style={{ marginTop: '8px', fontSize: '12px', color: '#888', fontStyle: 'italic', borderLeft: '2px solid #eee', paddingLeft: '8px' }}>
-          "{explanation.example || explanation.context}"
+          "{explanation.context}"
         </div>
       )}
     </div>

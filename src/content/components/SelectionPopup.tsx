@@ -237,11 +237,6 @@ export const SelectionPopup = () => {
                 {settings?.pronunciation === 'UK' ? 'UK' : 'US'} {formatIPA(selection.explanation.ipa)}
               </span>
             )}
-            {selection.explanation.type && (
-              <span style={{ fontStyle: 'italic', color: '#888', marginRight: '8px', fontSize: '0.8rem' }}>
-                {selection.explanation.type}
-              </span>
-            )}
             {selection.explanation.cefr && (
               <span style={{ 
                 marginRight: '8px', 
@@ -257,9 +252,26 @@ export const SelectionPopup = () => {
               </span>
             )}
           </div>
-          <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-            {selection.explanation.translation || selection.explanation.meaning}
-          </div>
+
+          {!selection.explanation.definitions || selection.explanation.definitions.length <= 1 ? (
+            <div style={{ fontSize: '0.9rem' }}>
+                          {selection.explanation.type && (!selection.explanation.definitions || selection.explanation.definitions.length <= 1) && (
+                            <span style={{ fontStyle: 'italic', color: '#888', marginRight: '8px', fontSize: '0.8rem' }}>
+                              {selection.explanation.type}
+                            </span>
+                          )}              <span style={{ fontWeight: 500 }}>{selection.explanation.meaning}</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.9rem' }}>
+              {selection.explanation.definitions.map((def, idx) => (
+                <div key={idx}>
+                   <span style={{ fontStyle: 'italic', color: '#888', marginRight: '8px', fontSize: '0.8rem' }}>{def.type}</span>
+                   <span style={{ fontWeight: 500 }}>{def.translation}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <button
             onClick={handleToggleVocab}
             style={{

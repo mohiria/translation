@@ -22,23 +22,29 @@ export interface UserSettings {
   llm: LLMSettings
 }
 
+export interface WordDefinition {
+  type: string
+  cefr: string
+  definition: string
+  example: string
+  translation: string
+  short_translation: string
+}
+
 export interface WordExplanation {
   word: string
   ipa?: string
   ipa_us?: string
   ipa_uk?: string
-  meaning: string // Primary meaning (e.g. translation)
-  context?: string // Primary example
+  meaning: string // Combined short translations for inline display
+  context?: string // Primary example (from first entry)
   tags?: DictTag[]
   source?: string
   
-  // New Oxford fields
-  type?: string
-  cefr?: string
-  definition?: string
-  example?: string
-  translation?: string
-  short_translation?: string
+  // Oxford specific
+  type?: string // Combined types (e.g. "n., v.")
+  cefr?: string // Highest CEFR level
+  definitions?: WordDefinition[] // All definitions
 }
 
 export interface SavedWord extends WordExplanation {
