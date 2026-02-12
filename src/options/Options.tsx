@@ -72,9 +72,8 @@ export const Options = () => {
             >
               <option value="CEFR_A1">入门 (A1 - Beginner)</option>
               <option value="CEFR_A2">基础 (A2 - Elementary)</option>
-              <option value="CEFR_B1">中级 (B1 - Intermediate / 高中)</option>
-              <option value="CET4">四级 (CET4 / B2 - Upper-Intermediate)</option>
-              <option value="CET6">六级 (CET6 / 考研 - Advanced)</option>
+              <option value="CET4">四级 (CET4 / B1 - Intermediate)</option>
+              <option value="CET6">六级 (CET6 / B2 - Upper-Intermediate)</option>
               <option value="CEFR_C1">高级 (C1 / 雅思 / 托福)</option>
               <option value="CEFR_C2">精通 (C2 / GRE)</option>
             </select>
