@@ -5,28 +5,59 @@ import { getSettings, saveSettings } from '../common/storage/settings'
 
 console.log('Language Learning Background script loaded')
 
+// Map to store enabled state per tab ID
+const tabStates: Record<number, boolean> = {};
+
 chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === 'install') {
-    chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
-  }
+  // Removed automatic tab opening for shortcuts as per user request
 });
+
+// Update the badge and state when a tab is updated or activated
+const updateTabUI = (tabId: number, enabled: boolean) => {
+  chrome.action.setBadgeText({
+    tabId,
+    text: enabled ? 'ON' : ''
+  });
+  chrome.action.setBadgeBackgroundColor({
+    tabId,
+    color: '#4b8bf5'
+  });
+};
 
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'toggle-translation') {
-    const settings = await getSettings();
-    const updated = { ...settings, enabled: !settings.enabled };
-    await saveSettings(updated);
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      const currentState = !!tabStates[tab.id];
+      const newState = !currentState;
+      tabStates[tab.id] = newState;
+      
+      updateTabUI(tab.id, newState);
+      
+      // Notify the content script in the specific tab
+      chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_TAB_ENABLED', enabled: newState });
+    }
   }
 });
 
+// Listen for messages from content scripts requesting their tab state
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'GET_TAB_STATE' && sender.tab?.id) {
+    sendResponse({ enabled: !!tabStates[sender.tab.id] });
+  }
+  
   if (request.type === 'TRANSLATE_WORD') {
     handleTranslationRequest(request.text, request.context, request.settings)
       .then(result => sendResponse({ success: true, data: result }))
       .catch(error => sendResponse({ success: false, error: error.message }))
     return true; 
   }
-})
+});
+
+// Clean up state when tab is closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+  delete tabStates[tabId];
+});
 
 async function handleTranslationRequest(text: string, contextSentence: string, settings?: UserSettings) {
   const preferredPron = settings?.pronunciation || 'US';

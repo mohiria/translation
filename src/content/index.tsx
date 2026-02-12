@@ -31,10 +31,12 @@ root.render(
   </>
 )
 
+let tabEnabled = false;
+
 const runScan = async () => {
   const settings = await getSettings()
   
-  if (!settings.enabled) {
+  if (!tabEnabled) {
     clearHighlights()
     return
   }
@@ -46,9 +48,6 @@ const runScan = async () => {
   vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
 
   console.log('Preparing scan data...')
-  
-  // Note: We DO NOT clearHighlights() here anymore to avoid flickering.
-  // The scanner will handle clearing internally just before drawing.
   
   await scanAndHighlight(
     document.body, 
@@ -63,12 +62,29 @@ const runScan = async () => {
 }
 
 const init = async () => {
-  // Initialize DB and trigger update check
+  // 1. Get initial tab-specific state from background
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_TAB_STATE' });
+    tabEnabled = !!response?.enabled;
+  } catch (e) {
+    tabEnabled = false;
+  }
+
+  // 2. Initialize DB and trigger update check
   await loadRemoteDictionary()
   await runScan()
 }
 
-// Listen for settings changes
+// Listen for messages from background (tab toggle)
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.type === 'TOGGLE_TAB_ENABLED') {
+    tabEnabled = request.enabled;
+    console.log('Tab translation state changed:', tabEnabled);
+    runScan();
+  }
+});
+
+// Listen for settings changes (only for proficiency/pronunciation/etc)
 chrome.storage.onChanged.addListener(async (changes, areaName) => {
   const isSyncSettingsChange = areaName === 'sync' && changes.settings
   const isLocalVocabChange = areaName === 'local' && changes.vocabulary
@@ -84,7 +100,6 @@ chrome.storage.onChanged.addListener(async (changes, areaName) => {
 
     // Only re-scan if highlighting-relevant settings changed
     const needsRescan = 
-      oldSettings.enabled !== newSettings.enabled ||
       oldSettings.proficiency !== newSettings.proficiency ||
       oldSettings.pronunciation !== newSettings.pronunciation ||
       oldSettings.showIPA !== newSettings.showIPA
@@ -108,11 +123,7 @@ if (document.readyState === 'loading') {
     const observer = new MutationObserver((mutations) => {
       if (timeout) clearTimeout(timeout)
       timeout = setTimeout(async () => {
-        const settings = await getSettings()
-        if (settings.enabled) {
-          // Ideally we scan only added nodes, but for simplicity/robustness with async DB:
-          // We might need a more targeted approach later. For now, re-scan body is safest 
-          // to ensure all new async words are caught.
+        if (tabEnabled) {
            await runScan()
         }
       }, 1000)
