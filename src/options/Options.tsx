@@ -71,11 +71,12 @@ export const Options = () => {
               style={{ padding: '8px', width: '300px', borderRadius: '4px', border: '1px solid #ddd' }}
             >
               <option value="CEFR_A1">入门 (A1 - Beginner)</option>
-              <option value="CEFR_A2">基础 (A2 - Elementary)</option>
-              <option value="CET4">四级 (CET4 / B1 - Intermediate)</option>
-              <option value="CET6">六级 (CET6 / B2 - Upper-Intermediate)</option>
-              <option value="CEFR_C1">高级 (C1 / 雅思 / 托福)</option>
-              <option value="CEFR_C2">精通 (C2 / GRE)</option>
+              <option value="CEFR_A2">基础 (A2 - Elementary / 初中)</option>
+              <option value="CEFR_B1">中级 (B1 - Intermediate / 高中)</option>
+              <option value="CET4">四级 (CET4 / B2 - Upper-Intermediate)</option>
+              <option value="CET6">六级 (CET6 / C1 - Advanced / 考研)</option>
+              <option value="CEFR_C1">高级 (IELTS / TOEFL / C1+)</option>
+              <option value="CEFR_C2">精通 (GRE / 专业八级 / C2)</option>
             </select>
             <p style={{ fontSize: '0.85rem', color: '#666' }}>Words you already know at this level won't be highlighted.</p>
           </div>

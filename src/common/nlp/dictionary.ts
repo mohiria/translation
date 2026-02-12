@@ -23,10 +23,10 @@ export const USER_LEVEL_RANK: Record<ProficiencyLevel, number> = {
   'CEFR_A1': 1, 
   'CEFR_A2': 1.5,
   'CEFR_B1': 2, 
-  'CET4': 2,
-  'CET6': 3,
-  'CEFR_C1': 5, 
-  'CEFR_C2': 6
+  'CET4': 3,   // CET4 maps to B2 threshold
+  'CET6': 5,   // CET6 maps to C1 threshold
+  'CEFR_C1': 6, 
+  'CEFR_C2': 7 
 }
 
 // ---------------------------------------------------------------------------
