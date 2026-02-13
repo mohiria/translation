@@ -102,7 +102,7 @@ async function handleTranslationRequest(text: string, contextSentence: string, s
     }
 
     try {
-      const icibaResult = await fetchFromIciba(text);
+      const icibaResult = await fetchFromIciba(text, preferredPron);
       if (icibaResult) return { ...icibaResult, source: 'iCIBA' };
     } catch (e) {
       console.error('iCIBA Word Lookup failed:', e);
@@ -133,26 +133,32 @@ async function handleTranslationRequest(text: string, contextSentence: string, s
  * Extremely stable for single words, includes IPA.
  */
 async function fetchFromYoudao(word: string, preferredPron: 'UK' | 'US') {
-  const url = `https://dict.youdao.com/jsonjwtranslate?q=${encodeURIComponent(word)}&t=2&f=1&j=3`;
-  const response = await fetch(url);
-  const data = await response.json();
-  
-  if (data && data.smartresult && data.smartresult.entries) {
-    const entries = data.smartresult.entries.filter((e: string) => e.trim().length > 0);
-    const meaning = entries.join('; ').replace(/\\n/g, '').trim();
+  try {
+    // 1. Get basic meaning from suggest API
+    const suggestUrl = `https://dict.youdao.com/suggest?q=${encodeURIComponent(word)}&num=1&doctype=json`;
+    const suggestRes = await fetch(suggestUrl);
+    const suggestData = await suggestRes.json();
     
+    let meaning = '';
+    if (suggestData && suggestData.data && suggestData.data.entries && suggestData.data.entries.length > 0) {
+      meaning = suggestData.data.entries[0].explain;
+    }
+
+    // 2. Get IPA from the detailed XML API
     const ipa_us = await fetchIpaFromYoudao(word, 'US');
     const ipa_uk = await fetchIpaFromYoudao(word, 'UK');
 
-    if (meaning) {
+    if (meaning || ipa_us || ipa_uk) {
        return {
          word,
          ipa_us: formatIPA(ipa_us),
          ipa_uk: formatIPA(ipa_uk),
          ipa: formatIPA(preferredPron === 'UK' ? (ipa_uk || ipa_us) : (ipa_us || ipa_uk)),
-         meaning: meaning
+         meaning: meaning || 'View details in dictionary'
        };
     }
+  } catch (e) {
+    console.error('Youdao fetch failed:', e);
   }
   return null;
 }
@@ -174,17 +180,27 @@ async function fetchFromYoudaoMT(text: string) {
 /**
  * Fetch results from iCIBA (Jinshan)
  */
-async function fetchFromIciba(word: string) {
-  const url = `https://dict-mobile.iciba.com/interface/index.php?c=word&m=getsuggest&nums=1&is_need_mean=1&word=${encodeURIComponent(word)}`;
-  const response = await fetch(url);
-  const data = await response.json();
-  if (data && data.message && data.message[0]) {
-    const entry = data.message[0];
-    return {
-      word: word,
-      meaning: entry.paraphrase,
-      source: 'iCIBA'
-    };
+async function fetchFromIciba(word: string, preferredPron: 'UK' | 'US') {
+  try {
+    const url = `https://dict-mobile.iciba.com/interface/index.php?c=word&m=getsuggest&nums=1&is_need_mean=1&word=${encodeURIComponent(word)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data && data.message && data.message[0]) {
+      const entry = data.message[0];
+      
+      // iCIBA suggest API sometimes returns symbols
+      const ipa = entry.symbol || '';
+      
+      return {
+        word: word,
+        meaning: entry.paraphrase || '',
+        ipa: formatIPA(ipa),
+        source: 'iCIBA'
+      };
+    }
+  } catch (e) {
+    console.error('iCIBA fetch failed:', e);
   }
   return null;
 }
@@ -208,21 +224,19 @@ async function fetchFromIcibaMT(text: string) {
 
 async function fetchIpaFromYoudao(word: string, preferredPron: 'UK' | 'US') {
   try {
-    // Try the XML-to-JSON trick for full info
     const fullUrl = `https://dict.youdao.com/fsearch?client=deskdict&q=${encodeURIComponent(word)}&pos=-1&doctype=xml&xmlVersion=3.2`;
     const fullRes = await fetch(fullUrl);
     const xml = await fullRes.text();
     
     if (preferredPron === 'UK') {
-      const ukPhonetic = xml.match(/<uk-phonetic><!\[CDATA\[(.*?)\]\]><\/uk-phonetic>/);
+      const ukPhonetic = xml.match(/<uk-phonetic-symbol>(.*?)<\/uk-phonetic-symbol>/) || xml.match(/<uk-phonetic><!\[CDATA\[(.*?)\]\]><\/uk-phonetic>/);
       if (ukPhonetic) return ukPhonetic[1];
     } else {
-      const usPhonetic = xml.match(/<us-phonetic><!\[CDATA\[(.*?)\]\]><\/us-phonetic>/);
+      const usPhonetic = xml.match(/<us-phonetic-symbol>(.*?)<\/us-phonetic-symbol>/) || xml.match(/<us-phonetic><!\[CDATA\[(.*?)\]\]><\/us-phonetic>/);
       if (usPhonetic) return usPhonetic[1];
     }
     
-    // Fallback to general phonetic
-    const phoneticMatch = xml.match(/<phonetic><!\[CDATA\[(.*?)\]\]><\/phonetic>/);
+    const phoneticMatch = xml.match(/<phonetic-symbol>(.*?)<\/phonetic-symbol>/) || xml.match(/<phonetic><!\[CDATA\[(.*?)\]\]><\/phonetic>/);
     return phoneticMatch ? phoneticMatch[1] : '';
   } catch (e) {
     return '';
