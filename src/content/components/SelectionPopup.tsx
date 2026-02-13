@@ -10,6 +10,7 @@ import { formatIPA } from '../../common/utils/format'
 export const SelectionPopup = () => {
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [loading, setLoading] = useState(false)
+  const [tabEnabled, setTabEnabled] = useState(false)
   const [selection, setSelection] = useState<{
     text: string
     rect: DOMRect
@@ -20,17 +21,56 @@ export const SelectionPopup = () => {
   useEffect(() => {
     getSettings().then(setSettings)
 
+    // Initial check for tab state
+    const checkState = () => {
+      chrome.runtime.sendMessage({ type: 'GET_TAB_STATE' }, (response) => {
+        setTabEnabled(!!response?.enabled)
+      })
+    }
+    checkState()
+
     const handleStorageChange = (changes: any, areaName: string) => {
       if (areaName === 'sync' && changes.settings) {
         setSettings(changes.settings.newValue)
       }
     }
+
+    const handleMessage = (request: any) => {
+      if (request.type === 'TOGGLE_TAB_ENABLED') {
+        setTabEnabled(request.enabled)
+        if (!request.enabled) {
+          setSelection(null)
+          setLoading(false)
+        }
+      }
+    }
+
     chrome.storage.onChanged.addListener(handleStorageChange)
-    return () => chrome.storage.onChanged.removeListener(handleStorageChange)
+    chrome.runtime.onMessage.addListener(handleMessage)
+    
+    // Periodically re-sync state just in case
+    const interval = setInterval(checkState, 2000)
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange)
+      chrome.runtime.onMessage.removeListener(handleMessage)
+      clearInterval(interval)
+    }
   }, [])
 
   useEffect(() => {
     const handleSelection = async () => {
+      // Re-verify enabled state from background to be absolutely sure
+      const response = await chrome.runtime.sendMessage({ type: 'GET_TAB_STATE' })
+      const isEnabled = !!response?.enabled
+      
+      // Update local state for rendering consistency
+      if (isEnabled !== tabEnabled) {
+        setTabEnabled(isEnabled)
+      }
+
+      if (!isEnabled) return
+
       const sel = window.getSelection()
       if (!sel || sel.isCollapsed) {
         setSelection(null)
@@ -54,24 +94,22 @@ export const SelectionPopup = () => {
         contextSentence = fullText.substring(start, end === -1 ? undefined : end + 1).trim()
       }
 
-      const settings = await getSettings()
+      const currentSettings = await getSettings()
       const localExp = await lookupWordInDB(text)
       const vocab = await getVocabulary()
       const isSaved = vocab.some(v => v.word.toLowerCase() === text.toLowerCase())
 
       if (isSaved) {
         const savedItem = vocab.find(v => v.word.toLowerCase() === text.toLowerCase())
-        // Update the saved item's IPA based on current preference if it has both
         const processedSavedItem = { ...savedItem! }
         
-        // Try to get regional IPA from the DB if the saved item doesn't have it
         const dbEntry = localExp
         const ipa_uk = processedSavedItem.ipa_uk || dbEntry?.ipa_uk
         const ipa_us = processedSavedItem.ipa_us || dbEntry?.ipa_us
 
-        if (settings.pronunciation === 'UK' && ipa_uk) {
+        if (currentSettings.pronunciation === 'UK' && ipa_uk) {
           processedSavedItem.ipa = formatIPA(ipa_uk)
-        } else if (settings.pronunciation === 'US' && ipa_us) {
+        } else if (currentSettings.pronunciation === 'US' && ipa_us) {
           processedSavedItem.ipa = formatIPA(ipa_us)
         } else {
           processedSavedItem.ipa = formatIPA(processedSavedItem.ipa)
@@ -82,11 +120,10 @@ export const SelectionPopup = () => {
       }
 
       if (localExp) {
-        // Apply regional IPA to the local DB result
         const finalExp = { ...localExp }
-        if (settings.pronunciation === 'UK' && finalExp.ipa_uk) {
+        if (currentSettings.pronunciation === 'UK' && finalExp.ipa_uk) {
           finalExp.ipa = formatIPA(finalExp.ipa_uk)
-        } else if (settings.pronunciation === 'US' && finalExp.ipa_us) {
+        } else if (currentSettings.pronunciation === 'US' && finalExp.ipa_us) {
           finalExp.ipa = formatIPA(finalExp.ipa_us)
         } else {
           finalExp.ipa = formatIPA(finalExp.ipa)
@@ -96,6 +133,7 @@ export const SelectionPopup = () => {
         return
       }
 
+      // If not in local, show loading and fetch
       setSelection({ text, rect, explanation: null, isSaved: false })
       setLoading(true)
       
@@ -103,7 +141,7 @@ export const SelectionPopup = () => {
         type: 'TRANSLATE_WORD', 
         text, 
         context: contextSentence,
-        settings 
+        settings: currentSettings 
       }, (response) => {
         setLoading(false)
         if (response && response.success) {
@@ -121,8 +159,6 @@ export const SelectionPopup = () => {
     }
 
     const onMouseUp = (e: MouseEvent) => {
-      // Don't re-trigger translation if clicking inside the popup
-      // When clicking inside Shadow DOM, the event target is retargeted to the host element
       const host = document.getElementById('ll-extension-host')
       if (host && (e.target === host || e.composedPath().includes(host))) {
         return
@@ -133,13 +169,15 @@ export const SelectionPopup = () => {
 
     document.addEventListener('mouseup', onMouseUp)
     return () => document.removeEventListener('mouseup', onMouseUp)
-  }, [])
+  }, [tabEnabled])
 
-  if (!selection) return null
+  if (!selection && !loading) return null
 
   const handleToggleVocab = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!selection) return
+
     if (selection.isSaved) {
       await removeFromVocabulary(selection.text)
     } else {
@@ -180,6 +218,8 @@ export const SelectionPopup = () => {
       position: 'fixed' as const
     }
   }
+
+  if (!selection) return null
 
   const style: React.CSSProperties = {
     ...calculatePosition(),

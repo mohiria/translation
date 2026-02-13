@@ -32,33 +32,39 @@ root.render(
 )
 
 let tabEnabled = false;
+let isScanning = false;
 
-const runScan = async () => {
-  const settings = await getSettings()
-  
-  if (!tabEnabled) {
-    clearHighlights()
-    return
+const runScan = async (forceClear = false) => {
+  if (isScanning) return;
+  isScanning = true;
+
+  try {
+    const settings = await getSettings()
+    
+    if (!tabEnabled) {
+      clearHighlights()
+      return
+    }
+    
+    const vocabList = await getVocabulary()
+    const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
+    
+    const vocabMap: Record<string, any> = {}
+    vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
+
+    await scanAndHighlight(
+      document.body, 
+      settings.proficiency, 
+      vocabSet, 
+      vocabMap, 
+      settings.pronunciation,
+      batchLookupWords,
+      forceClear, 
+      settings.showIPA
+    )
+  } finally {
+    isScanning = false;
   }
-  
-  const vocabList = await getVocabulary()
-  const vocabSet = new Set(vocabList.map(v => v.word.toLowerCase()))
-  
-  const vocabMap: Record<string, any> = {}
-  vocabList.forEach(v => { vocabMap[v.word.toLowerCase()] = v })
-
-  console.log('Preparing scan data...')
-  
-  await scanAndHighlight(
-    document.body, 
-    settings.proficiency, 
-    vocabSet, 
-    vocabMap, 
-    settings.pronunciation,
-    batchLookupWords,
-    true, // Pass a flag to indicate it should clear old ones just before drawing
-    settings.showIPA
-  )
 }
 
 const init = async () => {
@@ -72,7 +78,7 @@ const init = async () => {
 
   // 2. Initialize DB and trigger update check
   await loadRemoteDictionary()
-  await runScan()
+  await runScan(true)
 }
 
 // Listen for messages from background (tab toggle)
@@ -80,56 +86,77 @@ chrome.runtime.onMessage.addListener((request) => {
   if (request.type === 'TOGGLE_TAB_ENABLED') {
     tabEnabled = request.enabled;
     console.log('Tab translation state changed:', tabEnabled);
-    runScan();
+    if (tabEnabled) {
+      runScan(true);
+    } else {
+      clearHighlights();
+    }
   }
 });
 
-// Listen for settings changes (only for proficiency/pronunciation/etc)
+// Listen for settings changes
 chrome.storage.onChanged.addListener(async (changes, areaName) => {
-  const isSyncSettingsChange = areaName === 'sync' && changes.settings
-  const isLocalVocabChange = areaName === 'local' && changes.vocabulary
-  
-  if (isSyncSettingsChange) {
+  if (areaName === 'sync' && changes.settings) {
     const oldSettings = changes.settings.oldValue
     const newSettings = changes.settings.newValue
     
     if (!oldSettings || !newSettings) {
-      await runScan()
+      await runScan(true)
       return
     }
 
-    // Only re-scan if highlighting-relevant settings changed
     const needsRescan = 
       oldSettings.proficiency !== newSettings.proficiency ||
       oldSettings.pronunciation !== newSettings.pronunciation ||
       oldSettings.showIPA !== newSettings.showIPA
     
-    if (needsRescan) {
-      console.log('Visual settings changed, refreshing highlights...')
-      await runScan()
+    if (needsRescan && tabEnabled) {
+      await runScan(true)
     }
-  } else if (isLocalVocabChange) {
-    console.log('Vocabulary changed, refreshing highlights...')
-    await runScan()
+  } else if (areaName === 'local' && changes.vocabulary) {
+    if (tabEnabled) {
+      await runScan(true)
+    }
   }
 })
+
+const setupObserver = () => {
+  let timeout: any = null
+  const observer = new MutationObserver((mutations) => {
+    // Better detection of our own changes to prevent loops
+    const isOurMutation = mutations.some(m => {
+      const checkNode = (node: Node) => {
+        if (node instanceof HTMLElement) {
+          return node.classList.contains('ll-word-container') || node.id === 'll-extension-host';
+        }
+        return node.parentElement?.classList.contains('ll-word-container') || false;
+      };
+
+      return (
+        Array.from(m.addedNodes).some(checkNode) ||
+        Array.from(m.removedNodes).some(checkNode)
+      );
+    });
+
+    if (isOurMutation) return;
+
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(async () => {
+      if (tabEnabled) {
+         // Incremental scan: don't clear existing highlights
+         await runScan(false)
+      }
+    }, 1000)
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
+}
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     init()
-    
-    // Debounced mutation observer to avoid thrashing
-    let timeout: any = null
-    const observer = new MutationObserver((mutations) => {
-      if (timeout) clearTimeout(timeout)
-      timeout = setTimeout(async () => {
-        if (tabEnabled) {
-           await runScan()
-        }
-      }, 1000)
-    })
-    observer.observe(document.body, { childList: true, subtree: true })
+    setupObserver()
   })
 } else {
   init()
+  setupObserver()
 }

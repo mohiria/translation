@@ -100,14 +100,22 @@ export const scanAndHighlight = async (
 
 export const clearHighlights = (root: HTMLElement | Document = document) => {
   const highlights = root.querySelectorAll('.ll-word-container')
-  console.log(`Clearing ${highlights.length} highlights`)
+  if (highlights.length === 0) return
+
+  const parentsToNormalize = new Set<Node>()
+
   highlights.forEach(el => {
     const wordSpan = el.querySelector('.ll-word')
     const parent = el.parentNode
     if (parent) {
       parent.replaceChild(document.createTextNode(wordSpan?.textContent || ''), el)
-      parent.normalize()
+      parentsToNormalize.add(parent)
     }
+  })
+
+  // Normalize only once per parent to prevent jitter and excessive reflows
+  parentsToNormalize.forEach(parent => {
+    parent.normalize()
   })
 }
 
