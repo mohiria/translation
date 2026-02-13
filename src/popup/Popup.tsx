@@ -9,11 +9,53 @@ export const Popup = () => {
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [vocabulary, setVocabulary] = useState<SavedWord[]>([])
   const [activeTab, setActiveTab] = useState<'general' | 'llm' | 'vocab'>('general')
+  const [tabEnabled, setTabEnabled] = useState(false)
+  const [currentTabId, setCurrentTabId] = useState<number | null>(null)
 
   useEffect(() => {
     getSettings().then(setSettings)
     getVocabulary().then(setVocabulary)
-  }, [])
+
+    // Get current tab state
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id
+      if (tabId) {
+        setCurrentTabId(tabId)
+        chrome.runtime.sendMessage({ type: 'GET_TAB_STATE', tabId }, (response) => {
+          setTabEnabled(!!response?.enabled)
+        })
+      }
+    })
+
+    // Listen for storage changes to keep UI in sync
+    const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+      if (areaName === 'sync' && changes.settings) {
+        setSettings(changes.settings.newValue)
+      }
+    }
+
+    // Listen for tab state changes from background (shortcut)
+    const handleMessage = (request: any) => {
+      if (request.type === 'TAB_STATE_CHANGED' && request.tabId === currentTabId) {
+        setTabEnabled(request.enabled)
+      }
+    }
+
+    chrome.storage.onChanged.addListener(handleStorageChange)
+    chrome.runtime.onMessage.addListener(handleMessage)
+    
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange)
+      chrome.runtime.onMessage.removeListener(handleMessage)
+    }
+  }, [currentTabId])
+
+  const toggleTabEnabled = () => {
+    if (currentTabId) {
+      chrome.runtime.sendMessage({ type: 'TOGGLE_TAB_STATE', tabId: currentTabId })
+      setTabEnabled(!tabEnabled)
+    }
+  }
 
   const updateSettings = async (updater: (prev: UserSettings) => UserSettings) => {
     if (!settings) return
@@ -314,15 +356,10 @@ export const Popup = () => {
             <Keyboard size={18} />
           </button>
           <button 
-            onClick={async () => {
-              if (!settings) return
-              const updated = { ...settings, enabled: !settings.enabled }
-              setSettings(updated)
-              await saveSettings(updated)
-            }}
+            onClick={toggleTabEnabled}
             style={{
-              backgroundColor: settings.enabled ? '#4caf50' : '#e0e0e0',
-              color: settings.enabled ? 'white' : '#888',
+              backgroundColor: tabEnabled ? '#4caf50' : '#e0e0e0',
+              color: tabEnabled ? 'white' : '#888',
               border: 'none',
               padding: '4px 8px',
               borderRadius: '12px',
@@ -331,7 +368,7 @@ export const Popup = () => {
               fontWeight: 'bold'
             }}
           >
-            {settings.enabled ? 'ACTIVE' : 'OFF'}
+            {tabEnabled ? 'ACTIVE' : 'OFF'}
           </button>
         </div>
       </div>

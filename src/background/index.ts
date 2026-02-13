@@ -8,12 +8,8 @@ console.log('Language Learning Background script loaded')
 // Map to store enabled state per tab ID
 const tabStates: Record<number, boolean> = {};
 
-chrome.runtime.onInstalled.addListener((details) => {
-  // Removed automatic tab opening for shortcuts as per user request
-});
-
-// Update the badge and state when a tab is updated or activated
-const updateTabUI = (tabId: number, enabled: boolean) => {
+// Update the badge for a specific tab
+function updateTabBadge(tabId: number, enabled: boolean) {
   chrome.action.setBadgeText({
     tabId,
     text: enabled ? 'ON' : ''
@@ -22,28 +18,50 @@ const updateTabUI = (tabId: number, enabled: boolean) => {
     tabId,
     color: '#4b8bf5'
   });
-};
+}
+
+// Helper to toggle tab state and notify content script
+async function toggleTabState(tabId: number) {
+  const currentState = !!tabStates[tabId];
+  const newState = !currentState;
+  tabStates[tabId] = newState;
+  
+  updateTabBadge(tabId, newState);
+  
+  // Notify the content script in the specific tab
+  chrome.tabs.sendMessage(tabId, { type: 'TOGGLE_TAB_ENABLED', enabled: newState }).catch(() => {
+    // Content script might not be ready
+  });
+
+  // Notify popup if it's open
+  chrome.runtime.sendMessage({ type: 'TAB_STATE_CHANGED', tabId, enabled: newState }).catch(() => {
+    // Popup might not be open
+  });
+}
 
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'toggle-translation') {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id) {
-      const currentState = !!tabStates[tab.id];
-      const newState = !currentState;
-      tabStates[tab.id] = newState;
-      
-      updateTabUI(tab.id, newState);
-      
-      // Notify the content script in the specific tab
-      chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_TAB_ENABLED', enabled: newState });
+      await toggleTabState(tab.id);
     }
   }
 });
 
-// Listen for messages from content scripts requesting their tab state
+// Listen for messages from content scripts or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'GET_TAB_STATE' && sender.tab?.id) {
-    sendResponse({ enabled: !!tabStates[sender.tab.id] });
+  if (request.type === 'GET_TAB_STATE') {
+    const tabId = request.tabId || sender.tab?.id;
+    if (tabId) {
+      sendResponse({ enabled: !!tabStates[tabId] });
+    }
+    return true;
+  }
+
+  if (request.type === 'TOGGLE_TAB_STATE' && request.tabId) {
+    toggleTabState(request.tabId);
+    sendResponse({ success: true });
+    return true;
   }
   
   if (request.type === 'TRANSLATE_WORD') {
