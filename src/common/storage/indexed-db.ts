@@ -3,13 +3,18 @@ import pako from 'pako';
 import { WordExplanation, DictTag } from '../types';
 
 const DB_NAME = 'll_dictionary_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'words';
+const USER_STORE = 'user_words';
 const META_STORE = 'meta';
 
 interface DictionaryDB extends DBSchema {
   [STORE_NAME]: {
     key: string; // word (lowercase)
+    value: WordExplanation;
+  };
+  [USER_STORE]: {
+    key: string; 
     value: WordExplanation;
   };
   [META_STORE]: {
@@ -28,6 +33,9 @@ export const initDB = async () => {
     upgrade(db) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'word' }); // word is unique key, but we store by lowercase manually
+      }
+      if (!db.objectStoreNames.contains(USER_STORE)) {
+        db.createObjectStore(USER_STORE, { keyPath: 'word' });
       }
       if (!db.objectStoreNames.contains(META_STORE)) {
         db.createObjectStore(META_STORE);
@@ -120,10 +128,14 @@ export const lookupWordInDB = async (word: string): Promise<WordExplanation | un
   const db = await initDB();
   const lower = word.toLowerCase();
   
-  // 1. Try exact match
-  let result = await db.get(STORE_NAME, lower);
+  // 1. Try User Store First
+  let result = await db.get(USER_STORE, lower);
+  if (result) return result;
+
+  // 2. Try exact match in Core Store
+  result = await db.get(STORE_NAME, lower);
   
-  // 2. Simple lemmatization fallbacks (naive)
+  // 3. Simple lemmatization fallbacks (naive)
   if (!result) {
      if (lower.endsWith('s')) result = await db.get(STORE_NAME, lower.slice(0, -1));
      else if (lower.endsWith('ed')) result = await db.get(STORE_NAME, lower.slice(0, -2));
@@ -136,18 +148,23 @@ export const lookupWordInDB = async (word: string): Promise<WordExplanation | un
 // Bulk Lookup for Scanner (Optimization)
 export const batchLookupWords = async (words: string[]): Promise<Record<string, WordExplanation>> => {
   const db = await initDB();
-  const tx = db.transaction(STORE_NAME, 'readonly');
-  const store = tx.objectStore(STORE_NAME);
-  
   const results: Record<string, WordExplanation> = {};
   
-  // Parallelize requests
+  // Parallelize requests across both stores
   await Promise.all(words.map(async (w) => {
     const lower = w.toLowerCase();
-    const entry = await store.get(lower);
-    if (entry) {
-        // Restore original casing display if needed, but for now we trust the DB entry
-        results[lower] = entry; 
+    
+    // Check User Store
+    const userEntry = await db.get(USER_STORE, lower);
+    if (userEntry) {
+      results[lower] = userEntry;
+      return;
+    }
+
+    // Check Core Store
+    const coreEntry = await db.get(STORE_NAME, lower);
+    if (coreEntry) {
+      results[lower] = coreEntry;
     }
   }));
   

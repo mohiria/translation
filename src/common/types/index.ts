@@ -45,6 +45,7 @@ export interface WordExplanation {
   type?: string // Combined types (e.g. "n., v.")
   cefr?: string // Highest CEFR level
   definitions?: WordDefinition[] // All definitions
+  custom?: boolean // Whether this is a user-added entry
 }
 
 export interface SavedWord extends WordExplanation {
