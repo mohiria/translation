@@ -80,31 +80,52 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 async function handleTranslationRequest(text: string, contextSentence: string, settings?: UserSettings) {
   const preferredPron = settings?.pronunciation || 'US';
   
-  // 1. Check if LLM is enabled and configured
+  // 1. Check if LLM is enabled and configured (User's explicit choice)
   if (settings?.engine === 'llm' && settings.llm.apiKey) {
     try {
       console.log('Using LLM Provider:', settings.llm.provider, 'Preferred Pron:', preferredPron)
       return await fetchFromLLM(text, contextSentence || text, settings)
     } catch (e: any) {
       console.error('LLM translation failed:', e)
-      console.log('Falling back to standard dictionary...')
     }
   }
 
   const isSingleWord = text.trim().split(/\s+/).length === 1;
 
-  // If it's a single word, try Youdao First (Great for IPA and CN meanings)
+  // 2. Dictionary priority for single words
   if (isSingleWord) {
     try {
       const youdaoResult = await fetchFromYoudao(text, preferredPron);
-      if (youdaoResult) return youdaoResult;
+      if (youdaoResult) return { ...youdaoResult, source: 'Youdao' };
     } catch (e) {
-      console.error('Youdao failed:', e);
+      console.error('Youdao Word Lookup failed:', e);
+    }
+
+    try {
+      const icibaResult = await fetchFromIciba(text);
+      if (icibaResult) return { ...icibaResult, source: 'iCIBA' };
+    } catch (e) {
+      console.error('iCIBA Word Lookup failed:', e);
     }
   }
 
-  // Fallback to Google
-  return fetchFromGoogle(text);
+  // 3. Machine Translation (Youdao/iCIBA first, Google as fallback)
+  try {
+    return await fetchFromYoudaoMT(text);
+  } catch (e) {
+    console.warn('Youdao MT failed, trying iCIBA MT...', e);
+    try {
+      return await fetchFromIcibaMT(text);
+    } catch (e2) {
+      console.warn('iCIBA MT failed, trying Google Translate...', e2);
+      try {
+        return await fetchFromGoogle(text);
+      } catch (e3) {
+        console.error('All translation engines failed');
+        throw e3;
+      }
+    }
+  }
 }
 
 /**
@@ -113,18 +134,13 @@ async function handleTranslationRequest(text: string, contextSentence: string, s
  */
 async function fetchFromYoudao(word: string, preferredPron: 'UK' | 'US') {
   const url = `https://dict.youdao.com/jsonjwtranslate?q=${encodeURIComponent(word)}&t=2&f=1&j=3`;
-  console.log('Fetching from Youdao:', url);
-  
   const response = await fetch(url);
   const data = await response.json();
   
-  // Youdao response contains "smartresult" for simple dict lookups
   if (data && data.smartresult && data.smartresult.entries) {
-    // Filter out empty entries
     const entries = data.smartresult.entries.filter((e: string) => e.trim().length > 0);
     const meaning = entries.join('; ').replace(/\\n/g, '').trim();
     
-    // Fetch both to be safe and store in vocab
     const ipa_us = await fetchIpaFromYoudao(word, 'US');
     const ipa_uk = await fetchIpaFromYoudao(word, 'UK');
 
@@ -134,12 +150,60 @@ async function fetchFromYoudao(word: string, preferredPron: 'UK' | 'US') {
          ipa_us: formatIPA(ipa_us),
          ipa_uk: formatIPA(ipa_uk),
          ipa: formatIPA(preferredPron === 'UK' ? (ipa_uk || ipa_us) : (ipa_us || ipa_uk)),
-         meaning: meaning,
-         source: 'Youdao'
+         meaning: meaning
        };
     }
   }
   return null;
+}
+
+/**
+ * Youdao Machine Translation for Phrases/Sentences
+ */
+async function fetchFromYoudaoMT(text: string) {
+  const url = `https://fanyi.youdao.com/translate?&doctype=json&type=AUTO&i=${encodeURIComponent(text)}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  if (data && data.translateResult && data.translateResult[0]) {
+    const meaning = data.translateResult[0].map((r: any) => r.tgt).join('');
+    return { word: text, meaning, source: 'Youdao MT' };
+  }
+  throw new Error('Youdao MT failed');
+}
+
+/**
+ * Fetch results from iCIBA (Jinshan)
+ */
+async function fetchFromIciba(word: string) {
+  const url = `https://dict-mobile.iciba.com/interface/index.php?c=word&m=getsuggest&nums=1&is_need_mean=1&word=${encodeURIComponent(word)}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  if (data && data.message && data.message[0]) {
+    const entry = data.message[0];
+    return {
+      word: word,
+      meaning: entry.paraphrase,
+      source: 'iCIBA'
+    };
+  }
+  return null;
+}
+
+/**
+ * iCIBA Machine Translation
+ */
+async function fetchFromIcibaMT(text: string) {
+  const url = `https://ifanyi.iciba.com/index.php?c=trans&m=fy&client=6&auth_user=key_web_fanyi&sign=22222&pid=21007&q=${encodeURIComponent(text)}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `from=auto&to=zh&q=${encodeURIComponent(text)}`
+  });
+  const data = await response.json();
+  if (data && data.content && data.content.out) {
+    return { word: text, meaning: data.content.out, source: 'iCIBA MT' };
+  }
+  throw new Error('iCIBA MT failed');
 }
 
 async function fetchIpaFromYoudao(word: string, preferredPron: 'UK' | 'US') {

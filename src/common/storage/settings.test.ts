@@ -36,7 +36,7 @@ describe('Settings Storage', () => {
       proficiency: 'CEFR_B2', 
       showIPA: false, 
       pronunciation: 'US',
-      engine: 'google',
+      engine: 'standard',
       llm: { provider: 'gemini', apiKey: '' }
     }
     chromeMock.storage.sync.get.mockResolvedValue({ settings: mockData })
@@ -52,7 +52,7 @@ describe('Settings Storage', () => {
       proficiency: 'CEFR_B2', 
       showIPA: false, 
       pronunciation: 'US',
-      engine: 'google',
+      engine: 'standard',
       llm: { provider: 'gemini', apiKey: '' }
     }
     chromeMock.storage.sync.get.mockResolvedValue({})

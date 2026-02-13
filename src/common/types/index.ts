@@ -18,7 +18,7 @@ export interface UserSettings {
   pronunciation: 'UK' | 'US'
   
   // Translation Engine Settings
-  engine: 'google' | 'llm'
+  engine: 'standard' | 'llm'
   llm: LLMSettings
 }
 

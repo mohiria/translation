@@ -68,7 +68,7 @@ export const Popup = () => {
     updateSettings(prev => ({ ...prev, proficiency: e.target.value as ProficiencyLevel }))
   }
 
-  const handleEngineChange = async (engine: 'google' | 'llm') => {
+  const handleEngineChange = async (engine: 'standard' | 'llm') => {
     updateSettings(prev => ({ ...prev, engine }))
   }
 
@@ -154,14 +154,14 @@ export const Popup = () => {
         </label>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
-            onClick={() => handleEngineChange('google')}
+            onClick={() => handleEngineChange('standard')}
             style={{
               flex: 1,
               padding: '8px',
               borderRadius: '6px',
-              border: settings.engine === 'google' ? '1px solid #4b8bf5' : '1px solid #ddd',
-              backgroundColor: settings.engine === 'google' ? '#f0f7ff' : 'white',
-              color: settings.engine === 'google' ? '#4b8bf5' : '#333',
+              border: settings.engine === 'standard' ? '1px solid #4b8bf5' : '1px solid #ddd',
+              backgroundColor: settings.engine === 'standard' ? '#f0f7ff' : 'white',
+              color: settings.engine === 'standard' ? '#4b8bf5' : '#333',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -170,7 +170,7 @@ export const Popup = () => {
               fontSize: '0.85rem'
             }}
           >
-            <Globe size={14} /> Google
+            <Globe size={14} /> Standard (Stable)
           </button>
           <button
             onClick={() => {
