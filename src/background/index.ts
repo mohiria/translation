@@ -10,13 +10,36 @@ const tabStates: Record<number, boolean> = {};
 
 // Update the badge for a specific tab
 function updateTabBadge(tabId: number, enabled: boolean) {
+  // Clear the badge text explicitly
   chrome.action.setBadgeText({
     tabId,
-    text: enabled ? 'ON' : ''
+    text: ''
   });
-  chrome.action.setBadgeBackgroundColor({
+
+  // Dynamically update the extension icon
+  const iconPrefix = enabled ? 'icon-active' : 'icon';
+  
+  // CRXJS usually maps src/assets to assets/ in the build, 
+  // but during dev, it might need the full path.
+  chrome.action.setIcon({
     tabId,
-    color: '#4b8bf5'
+    path: {
+      "16": `/src/assets/${iconPrefix}-16.png`,
+      "48": `/src/assets/${iconPrefix}-48.png`,
+      "128": `/src/assets/${iconPrefix}-128.png`
+    }
+  }, () => {
+    if (chrome.runtime.lastError) {
+      // Fallback for production build if /src/assets/ fails
+      chrome.action.setIcon({
+        tabId,
+        path: {
+          "16": `assets/${iconPrefix}-16.png`,
+          "48": `assets/${iconPrefix}-48.png`,
+          "128": `assets/${iconPrefix}-128.png`
+        }
+      });
+    }
   });
 }
 
@@ -75,6 +98,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Clean up state when tab is closed
 chrome.tabs.onRemoved.addListener((tabId) => {
   delete tabStates[tabId];
+});
+
+// Restore state when tab is refreshed
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tabStates[tabId]) {
+    updateTabBadge(tabId, tabStates[tabId]);
+  }
 });
 
 async function handleTranslationRequest(text: string, contextSentence: string, settings?: UserSettings) {

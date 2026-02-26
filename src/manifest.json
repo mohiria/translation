@@ -50,7 +50,10 @@
       "resources": [
         "dictionaries/core-vocab.json",
         "data/version.json",
-        "data/dictionary-core.json.gz"
+        "data/dictionary-core.json.gz",
+        "src/assets/icon-active-16.png",
+        "src/assets/icon-active-48.png",
+        "src/assets/icon-active-128.png"
       ]
     }
   ]
