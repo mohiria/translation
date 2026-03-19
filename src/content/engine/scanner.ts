@@ -195,21 +195,38 @@ const createWordContainer = (match: any, pronunciation: string, showIPA: boolean
   span.onclick = (e) => e.stopPropagation()
   container.appendChild(span)
 
-  // Voice Icon
+  // Voice Icon (Refined Two-Arc Style)
   const voiceBtn = document.createElement('span')
+  voiceBtn.className = 'll-voice-btn'
   voiceBtn.setAttribute('aria-hidden', 'true')
-  voiceBtn.style.userSelect = 'none'
-  voiceBtn.style.marginLeft = '2px'
-  voiceBtn.style.display = 'inline-flex'
-  voiceBtn.style.alignItems = 'center'
+  voiceBtn.style.cssText = 'user-select:none; margin-left:4px; display:inline-flex; align-items:center; cursor:pointer; padding:2px; vertical-align:middle;'
+  
   voiceBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; opacity: 0.6;">
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-    </svg>`
+    <svg class="youdao-voice-svg" viewBox="0 0 1024 1024" width="14" height="14">
+      <rect class="source" x="256" y="384" width="64" height="256" rx="32" fill="#a1a1a1" />
+      <path class="wave wave-1" d="M448 320c48 0 96 85.3 96 192s-48 192-96 192" stroke="#a1a1a1" stroke-width="80" fill="none" stroke-linecap="round" />
+      <path class="wave wave-2" d="M608 192c80 0 160 143.3 160 320s-80 320-160 320" stroke="#a1a1a1" stroke-width="80" fill="none" stroke-linecap="round" />
+    </svg>
+    <style>
+      @keyframes voiceWaveFade {
+        0% { opacity: 0.3; }
+        50% { opacity: 1; }
+        100% { opacity: 0.3; }
+      }
+      .ll-voice-btn:hover .source { fill: #4b8bf5; }
+      .ll-voice-btn:hover .wave { stroke: #4b8bf5; }
+      .ll-voice-btn.playing .source { fill: #4b8bf5; }
+      .ll-voice-btn.playing .wave { stroke: #4b8bf5; }
+      .ll-voice-btn.playing .wave-1 { animation: voiceWaveFade 0.6s infinite; }
+      .ll-voice-btn.playing .wave-2 { animation: voiceWaveFade 0.6s infinite 0.2s; }
+    </style>
+  `
+  
   voiceBtn.onclick = (e) => {
     e.stopPropagation()
+    voiceBtn.classList.add('playing')
     speak(match.word, pronunciation === 'UK' ? 'en-GB' : 'en-US')
+    setTimeout(() => voiceBtn.classList.remove('playing'), 1200)
   }
   container.appendChild(voiceBtn)
 

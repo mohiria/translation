@@ -3,8 +3,8 @@ import { useSettings } from '../../common/hooks/useSettings'
 import { useVocabulary } from '../../common/hooks/useVocabulary'
 import { lookupWordInDB } from '../../common/storage/indexed-db'
 import { WordExplanation } from '../../common/types'
-import { BookOpen, Plus, Trash2, Volume2 } from 'lucide-react'
-import { speak } from '../../common/utils/speech'
+import { BookOpen, Plus, Trash2 } from 'lucide-react'
+import { VoiceIcon } from './VoiceIcon'
 import { getPreferredIPA } from '../../common/utils/format'
 
 export const SelectionPopup = () => {
@@ -62,7 +62,6 @@ export const SelectionPopup = () => {
         return
       }
 
-      // Online lookup
       setSelection({ text, rect, explanation: null, isSaved: false })
       setLoading(true)
       
@@ -125,9 +124,11 @@ export const SelectionPopup = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
         <BookOpen size={16} color="#4b8bf5" />
         <span style={{ fontWeight: 'bold' }}>{selection.text}</span>
-        <button onClick={() => speak(selection.text, settings?.pronunciation === 'UK' ? 'en-GB' : 'en-US')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <Volume2 size={14} />
-        </button>
+        <VoiceIcon 
+          word={selection.text} 
+          pronunciation={settings?.pronunciation || 'US'} 
+          size={16} 
+        />
         {selection.explanation?.source && <span style={{ fontSize: '10px', backgroundColor: '#eee', padding: '2px 4px', borderRadius: '4px', marginLeft: 'auto' }}>{selection.explanation.source}</span>}
       </div>
 

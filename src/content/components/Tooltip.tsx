@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { WordExplanation } from '../../common/types'
-import { Volume2 } from 'lucide-react'
 import { useSettings } from '../../common/hooks/useSettings'
-import { speak } from '../../common/utils/speech'
 import { getPreferredIPA } from '../../common/utils/format'
+import { VoiceIcon } from './VoiceIcon'
 
 interface TooltipProps {
   explanation: WordExplanation
@@ -34,12 +33,12 @@ export const Tooltip: React.FC<TooltipProps> = ({ explanation, onClose, position
     <div style={style} onMouseLeave={onClose}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
         <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{explanation.word}</span>
-        <button 
-          onClick={() => speak(explanation.word, settings?.pronunciation === 'UK' ? 'en-GB' : 'en-US')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}
-        >
-          <Volume2 size={16} />
-        </button>
+        <VoiceIcon 
+          word={explanation.word} 
+          pronunciation={settings?.pronunciation || 'US'} 
+          size={16} 
+          color="#666" 
+        />
       </div>
       
       {ipa && (
