@@ -62,24 +62,32 @@ Output ONLY a valid JSON object with this structure:
     return parseLLMJson(text, 'Gemini', settings.pronunciation)
   }
 
-  // 2. OpenAI / Deepseek / Claude (using OpenAI compatible interface)
+  // 2. OpenAI / Deepseek / Claude / Moonshot / Zhipu / Qwen (using OpenAI compatible interface)
   let endpoint = '';
-  let modelName = model || 'gpt-3.5-turbo';
+  let modelName = model || 'gpt-4o-mini';
 
   if (provider === 'openai') {
     endpoint = baseUrl ? `${baseUrl.replace(/\/$/, '')}/chat/completions` : 'https://api.openai.com/v1/chat/completions';
   } else if (provider === 'deepseek') {
     endpoint = baseUrl ? `${baseUrl.replace(/\/$/, '')}/chat/completions` : 'https://api.deepseek.com/chat/completions';
     modelName = model || 'deepseek-chat';
+  } else if (provider === 'moonshot') {
+    endpoint = baseUrl ? `${baseUrl.replace(/\/$/, '')}/chat/completions` : 'https://api.moonshot.cn/v1/chat/completions';
+    modelName = model || 'kimi-k2.5';
+  } else if (provider === 'zhipu') {
+    endpoint = baseUrl ? `${baseUrl.replace(/\/$/, '')}/chat/completions` : 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+    modelName = model || 'glm-4.7-flash';
+  } else if (provider === 'qwen') {
+    endpoint = baseUrl ? `${baseUrl.replace(/\/$/, '')}/chat/completions` : 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+    modelName = model || 'qwen3.5-flash';
   } else if (provider === 'custom') {
     if (!baseUrl) throw new Error('Base URL is required for Custom Provider');
     endpoint = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl.replace(/\/$/, '')}/chat/completions`;
-    modelName = model || 'gpt-3.5-turbo';
   } else if (provider === 'claude') {
     if (baseUrl) {
       endpoint = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
     } else {
-      return fetchFromAnthropic(apiKey, model || 'claude-3-5-haiku-20240307', systemPrompt, settings.pronunciation);
+      return fetchFromAnthropic(apiKey, model || 'Claude-Sonnet-4.6', systemPrompt, settings.pronunciation);
     }
   } else if (baseUrl) {
     endpoint = `${baseUrl}/chat/completions`;

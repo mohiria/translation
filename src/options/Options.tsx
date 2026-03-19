@@ -98,6 +98,9 @@ export const Options = () => {
                 <option value="openai">OpenAI (GPT)</option>
                 <option value="claude">Anthropic Claude</option>
                 <option value="deepseek">Deepseek</option>
+                <option value="moonshot">月之暗面 (Kimi)</option>
+                <option value="zhipu">智谱 AI (GLM)</option>
+                <option value="qwen">阿里千问 (Qwen)</option>
                 <option value="custom">Custom (OpenAI Compatible)</option>
               </select>
             </div>

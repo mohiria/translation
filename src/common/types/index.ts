@@ -2,13 +2,21 @@ export type ProficiencyLevel = 'CEFR_A1' | 'CEFR_A2' | 'CEFR_B1' | 'CET4' | 'CET
 
 export type DictTag = 'zk' | 'gk' | 'cet4' | 'cet6' | 'ky' | 'ielts' | 'toefl' | 'gre' | 'a1' | 'a2' | 'b1' | 'b2' | 'c1' | 'c2'
 
-export type LLMProvider = 'gemini' | 'openai' | 'claude' | 'deepseek' | 'custom'
+export type LLMProvider = 'gemini' | 'openai' | 'claude' | 'deepseek' | 'moonshot' | 'zhipu' | 'qwen' | 'custom'
 
 export interface LLMSettings {
   provider: LLMProvider
   apiKey: string
   baseUrl?: string
   model?: string
+  
+  // Backing storage for each provider's specific settings
+  // UI remains unchanged, logic handles synchronization
+  providerConfigs?: Record<string, {
+    apiKey: string
+    baseUrl?: string
+    model?: string
+  }>
 }
 
 export interface UserSettings {
@@ -16,8 +24,6 @@ export interface UserSettings {
   proficiency: ProficiencyLevel
   showIPA: boolean
   pronunciation: 'UK' | 'US'
-  
-  // Translation Engine Settings
   engine: 'standard' | 'llm'
   llm: LLMSettings
 }
@@ -36,16 +42,14 @@ export interface WordExplanation {
   ipa?: string
   ipa_us?: string
   ipa_uk?: string
-  meaning: string // Combined short translations for inline display
-  context?: string // Primary example (from first entry)
+  meaning: string
+  context?: string
   tags?: DictTag[]
   source?: string
-  
-  // Oxford specific
-  type?: string // Combined types (e.g. "n., v.")
-  cefr?: string // Highest CEFR level
-  definitions?: WordDefinition[] // All definitions
-  custom?: boolean // Whether this is a user-added entry
+  type?: string
+  cefr?: string
+  definitions?: WordDefinition[]
+  custom?: boolean
 }
 
 export interface SavedWord extends WordExplanation {
