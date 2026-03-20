@@ -157,6 +157,14 @@ export const Popup = () => {
     const isCustom = provider === 'custom'
     const models = !isCustom ? LLM_MODELS[provider as keyof typeof LLM_MODELS] : []
 
+    const inputStyle: React.CSSProperties = {
+      width: '100%',
+      padding: '6px',
+      borderRadius: '4px',
+      border: '1px solid #ddd',
+      boxSizing: 'border-box'
+    }
+
     return (
       <div style={{ animation: 'fadeIn 0.2s' }}>
         <div style={{ marginBottom: '0.8rem' }}>
@@ -170,7 +178,7 @@ export const Popup = () => {
                 model: p !== 'custom' ? LLM_MODELS[p as keyof typeof LLM_MODELS][0] : '' 
               })
             }}
-            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+            style={inputStyle}
           >
             <option value="gemini">Google Gemini</option>
             <option value="openai">OpenAI (GPT)</option>
@@ -191,13 +199,13 @@ export const Popup = () => {
               value={settings.llm.model || ''} 
               onChange={(e) => handleLLMUpdate({ model: e.target.value })}
               placeholder="e.g. gpt-4-turbo"
-              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+              style={inputStyle}
             />
           ) : (
             <select 
               value={settings.llm.model} 
               onChange={(e) => handleLLMUpdate({ model: e.target.value })}
-              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+              style={inputStyle}
             >
               {models.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
@@ -211,7 +219,7 @@ export const Popup = () => {
             value={settings.llm.apiKey} 
             onChange={(e) => handleLLMUpdate({ apiKey: e.target.value })}
             placeholder="sk-..."
-            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+            style={inputStyle}
           />
         </div>
 
@@ -222,7 +230,7 @@ export const Popup = () => {
             value={settings.llm.baseUrl || ''} 
             onChange={(e) => handleLLMUpdate({ baseUrl: e.target.value })}
             placeholder={LLM_DEFAULT_URLS[provider]}
-            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+            style={inputStyle}
           />
         </div>
       </div>
@@ -256,7 +264,7 @@ export const Popup = () => {
   )
 
   return (
-    <div style={{ width: '300px', padding: '12px', fontFamily: 'sans-serif', maxHeight: '500px', overflowY: 'auto' }}>
+    <div style={{ width: '300px', padding: '12px', fontFamily: 'sans-serif', maxHeight: '500px', overflowY: 'auto', overflowX: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <h2 style={{ fontSize: '1.1rem', margin: 0, color: '#4b8bf5' }}>In Reading</h2>
         <div style={{ display: 'flex', gap: '8px' }}>

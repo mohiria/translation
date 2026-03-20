@@ -34,8 +34,8 @@
 ### 4. 强大的多级配置
 无论是发音风格选择，还是生词本管理，亦或是接入下一代 AI / LLM 引擎（如 Gemini, OpenAI），**In Reading** 都提供了精致且直观的配置界面。
 > <p align="center">
->   <img src="docs/images/extension-page-2.png" width="45%" />
->   <img src="docs/images/extension-page-3.png" width="45%" />
+>   <img src="docs/images/extension-page-2.png" width="45%" style="vertical-align: top; margin-right: 10px;" />
+>   <img src="docs/images/extension-page-3.png" width="45%" style="vertical-align: top; margin-left: 10px;" />
 > </p>
 
 ---
