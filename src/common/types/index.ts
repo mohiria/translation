@@ -18,7 +18,6 @@ export interface LLMSettings {
     model?: string
   }>
 }
-
 export interface UserSettings {
   enabled: boolean
   proficiency: ProficiencyLevel
@@ -27,6 +26,7 @@ export interface UserSettings {
   engine: 'standard' | 'llm'
   llm: LLMSettings
 }
+
 
 export interface WordDefinition {
   type: string

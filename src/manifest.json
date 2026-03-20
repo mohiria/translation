@@ -17,7 +17,12 @@
     "https://api.deepseek.com/*"
   ],
   "action": {
-    "default_popup": "src/popup/index.html"
+    "default_popup": "src/popup/index.html",
+    "default_icon": {
+      "16": "src/assets/icon-16.png",
+      "48": "src/assets/icon-48.png",
+      "128": "src/assets/icon-128.png"
+    }
   },
   "commands": {
     "toggle-translation": {
@@ -25,7 +30,7 @@
         "default": "Alt+A",
         "mac": "Alt+A"
       },
-      "description": "Toggle translation on/off"
+      "description": "开启/关闭翻译"
     }
   },
   "background": {
@@ -40,9 +45,9 @@
   ],
   "options_page": "src/options/index.html",
   "icons": {
-    "16": "src/assets/icon-16.png",
-    "48": "src/assets/icon-48.png",
-    "128": "src/assets/icon-128.png"
+    "16": "src/assets/icon-active-16.png",
+    "48": "src/assets/icon-active-48.png",
+    "128": "src/assets/icon-active-128.png"
   },
   "web_accessible_resources": [
     {

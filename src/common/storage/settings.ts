@@ -1,5 +1,4 @@
 import { UserSettings } from '../types'
-
 const DEFAULT_SETTINGS: UserSettings = {
   enabled: false,
   proficiency: 'CET4',
@@ -14,6 +13,7 @@ const DEFAULT_SETTINGS: UserSettings = {
     providerConfigs: {}
   }
 }
+
 
 export const getSettings = async (): Promise<UserSettings> => {
   let data = await chrome.storage.sync.get('settings')
