@@ -42,6 +42,8 @@ export const SelectionPopup = () => {
 
   useEffect(() => {
     const handleSelection = async () => {
+      if (!tabEnabled) return
+      
       const sel = window.getSelection()
       const text = sel?.toString().trim()
       if (!sel || sel.isCollapsed || !text || text.length > 50 || !/[a-zA-Z]/.test(text)) {
