@@ -22,21 +22,21 @@
 
 ### 1. 真正的“沉浸式”无感辅助
 注解直接浮现在生词上方，自带 **IPA 国际音标**。无需点击，无需跳转。你的视线始终流转在原文的逻辑线条上，注解如同你脑海中原本就有的记忆碎片。
-> ![沉浸式阅读示例](docs/images/page-translation-1.png)
+![沉浸式阅读示例](docs/images/page-translation-1.png)
 
 ### 2. 精准的“等级感知”系统
 你是 CET-4 水平？还是雅思 7 分？设置你的等级，**In Reading** 将自动隐藏所有你“本该认识”的单词。我们拒绝信息过载，只标注那些真正处于你认知边界的词汇。
-> ![等级设置示例](docs/images/extension-page-1.png)
+![等级设置示例](docs/images/extension-page-1.png)
 
 ### 3. 智能上下文过滤 (Context-Aware)
 我们明白 `Pipeline` 在技术文档中是术语，在标题中是专有名词。**In Reading** 能够智能跳过标题、导航栏及特定语境下的词汇，保护网页原始结构，不产生视觉噪音。
 
 ### 4. 强大的多级配置
 无论是发音风格选择，还是生词本管理，亦或是接入下一代 AI / LLM 引擎（如 Gemini, OpenAI），**In Reading** 都提供了精致且直观的配置界面。
-> <p align="center">
->   <img src="docs/images/extension-page-2.png" width="45%" style="vertical-align: top; margin-right: 10px;" />
->   <img src="docs/images/extension-page-3.png" width="45%" style="vertical-align: top; margin-left: 10px;" />
-> </p>
+<p align="center">
+  <img src="docs/images/extension-page-2.png" width="45%" style="vertical-align: top; margin-right: 10px;" />
+  <img src="docs/images/extension-page-3.png" width="45%" style="vertical-align: top; margin-left: 10px;" />
+</p>
 
 ---
 
@@ -45,7 +45,7 @@
 - **快捷指令**：默认 `Alt + A` (Mac `⌥ + A`) 瞬间开启/关闭沉浸模式。
 - **持久化状态**：即便刷新页面，你的阅读状态也会被忠实记录，无需重复开启。
 - **精致弹窗**：选中生词，弹出经过排版优化的翻译卡片，智能分行，极致美观。
-> ![精致弹窗展示](docs/images/page-translation-pop-3.png)
+![精致弹窗展示](docs/images/page-translation-pop-3.png)
 - **极速本地缓存**：内置 5000+ 核心词库，支持 IndexedDB 高速缓存，无网环境依然流畅。
 
 ---
