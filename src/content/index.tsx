@@ -52,15 +52,24 @@ const runScan = async (forceClear = false) => {
 const setupObserver = () => {
   let timeout: any = null
   const observer = new MutationObserver((mutations) => {
+    // Check if the change was made by us (adding/removing word containers)
     const isOurMutation = mutations.some(m => {
-      const check = (n: Node) => (n instanceof HTMLElement && (n.classList.contains('ll-word-container') || n.id === 'll-extension-host')) || n.parentElement?.classList.contains('ll-word-container')
-      return Array.from(m.addedNodes).some(check) || Array.from(m.removedNodes).some(check)
+      const isOurNode = (n: Node) => 
+        (n instanceof HTMLElement && (n.classList.contains('ll-word-container') || n.id === 'll-extension-host')) || 
+        n.parentElement?.classList.contains('ll-word-container')
+      
+      return Array.from(m.addedNodes).some(isOurNode) || Array.from(m.removedNodes).some(isOurNode)
     })
 
     if (isOurMutation) return
+    
     if (timeout) clearTimeout(timeout)
-    timeout = setTimeout(() => tabEnabled && runScan(false), 1000)
+    // Reduced debounce time from 1000ms to 500ms for better responsiveness
+    timeout = setTimeout(() => {
+      if (tabEnabled) runScan(false)
+    }, 500)
   })
+  
   observer.observe(document.body, { childList: true, subtree: true })
 }
 

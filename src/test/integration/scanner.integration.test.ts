@@ -39,9 +39,9 @@ describe('Scanner Integration - MS Learn Simulation', () => {
     const getT = (id: string) => document.getElementById(id)?.querySelector('.ll-translation')?.textContent || ''
 
     expect(getT('p1')).toContain('扩展') // 1st: Show
-    expect(getT('p2')).toBe('')         // 2nd: Gap 1
-    expect(getT('p3')).toBe('')         // 3rd: Gap 2
-    expect(getT('p4')).toBe('')         // 4th: Gap 3
+    expect(getT('p2')).toBe('')         // 2nd: Gap (REFRESH_GAP=2 means skip 1)
+    expect(getT('p3')).toContain('扩展') // 3rd: Refresh Show
+    expect(getT('p4')).toBe('')         // 4th: Gap
     expect(getT('p5')).toContain('扩展') // 5th: Refresh Show
   })
 })

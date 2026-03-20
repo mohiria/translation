@@ -4,15 +4,23 @@ import { getSettings } from '../common/storage/settings'
 import * as TranslationService from './services/translation'
 
 /**
- * State Management
+ * State Management (Persist across refreshes using session storage)
  */
-const tabStates: Record<number, boolean> = {}
+const getTabState = async (tabId: number): Promise<boolean> => {
+  const data = await chrome.storage.session.get(`tabState_${tabId}`)
+  return !!data[`tabState_${tabId}`]
+}
+
+const setTabState = async (tabId: number, enabled: boolean) => {
+  await chrome.storage.session.set({ [`tabState_${tabId}`]: enabled })
+}
 
 /**
  * Badge & Icon Management
  */
 const updateTabUI = (tabId: number, enabled: boolean) => {
   chrome.action.setBadgeText({ tabId, text: '' })
+  
   const iconPrefix = enabled ? 'icon-active' : 'icon'
   const iconPath = (size: string) => `/src/assets/${iconPrefix}-${size}.png`
   const fallbackPath = (size: string) => `assets/${iconPrefix}-${size}.png`
@@ -25,8 +33,9 @@ const updateTabUI = (tabId: number, enabled: boolean) => {
 }
 
 const toggleTabState = async (tabId: number) => {
-  const newState = !tabStates[tabId]
-  tabStates[tabId] = newState
+  const currentState = await getTabState(tabId)
+  const newState = !currentState
+  await setTabState(tabId, newState)
   updateTabUI(tabId, newState)
   
   chrome.tabs.sendMessage(tabId, { type: 'TOGGLE_TAB_ENABLED', enabled: newState }).catch(() => {})
@@ -86,7 +95,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   switch (request.type) {
     case 'GET_TAB_STATE':
-      if (tabId) sendResponse({ enabled: !!tabStates[tabId] })
+      if (tabId) {
+        getTabState(tabId).then(enabled => sendResponse({ enabled }))
+        return true
+      }
       break
     case 'TOGGLE_TAB_STATE':
       if (tabId) toggleTabState(tabId).then(() => sendResponse({ success: true }))
@@ -100,9 +112,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true
 })
 
-chrome.tabs.onRemoved.addListener(tabId => delete tabStates[tabId])
-chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
-  if (change.status === 'complete' && tabStates[tabId]) {
-    updateTabUI(tabId, true)
+chrome.tabs.onRemoved.addListener(tabId => chrome.storage.session.remove(`tabState_${tabId}`))
+chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
+  if (change.status === 'complete') {
+    const enabled = await getTabState(tabId)
+    if (enabled) {
+      updateTabUI(tabId, true)
+      // Ensure the newly loaded content script knows it should be enabled
+      chrome.tabs.sendMessage(tabId, { type: 'TOGGLE_TAB_ENABLED', enabled: true }).catch(() => {})
+    }
   }
 })

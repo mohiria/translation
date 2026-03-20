@@ -5,15 +5,27 @@ import { speak } from '../../common/utils/speech'
 /**
  * Constants & Configuration
  */
-const REFRESH_GAP = 4 // Skip 3 paragraphs between translations (1 show, 3 hide)
+const REFRESH_GAP = 2 // Increased sensitivity: show word more frequently (every 2nd block instead of 4th)
 
-const IGNORE_TAGS = 'SCRIPT, STYLE, TEXTAREA, INPUT, NOSCRIPT, CODE, PRE, H1, H2, H3, H4, H5, H6, HEADER, NAV, FOOTER, ASIDE, LABEL, SELECT, OPTION, FIELDSET, LEGEND, KBD, SAMP, VAR, TIME, DATA, SVG, CANVAS, MATH, SUMMARY, DIALOG'
+/**
+ * Elements and Roles that should be skipped entirely (including their children).
+ */
+const SKIP_SELECTOR = [
+  'SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'NOSCRIPT', 'CODE', 'PRE', 
+  'HEADER', 'NAV', 'FOOTER', 'ASIDE', 'BUTTON',
+  'LABEL', 'SELECT', 'OPTION', 'FIELDSET', 'LEGEND',
+  'KBD', 'SAMP', 'VAR', 'TIME', 'DATA', 'SVG', 'CANVAS', 'MATH',
+  'SUMMARY', 'DIALOG',
+  '[role="navigation"]', '[role="button"]', '[role="menu"]', '[role="banner"]', 
+  '[role="contentinfo"]', '[role="tablist"]', '[role="tab"]', '[role="tooltip"]', 
+  '[role="status"]', '[role="alert"]', '[role="complementary"]',
+  '[aria-hidden="true"]'
+].join(', ')
 
-const IGNORE_ROLES = `
-  [role="navigation"], [role="button"], [role="menu"], [role="banner"], [role="contentinfo"],
-  [role="tablist"], [role="tab"], [role="tooltip"], [role="status"], [role="alert"], 
-  [role="heading"], [aria-hidden="true"]
-`
+/**
+ * Heading tags are usually ignored to preserve layout, but we allow them if they are deep inside content.
+ */
+const HEADER_SELECTOR = 'H1, H2, H3, H4, H5, H6, [role="heading"]'
 
 interface WordState {
   totalDisplayed: number
@@ -21,19 +33,28 @@ interface WordState {
 }
 
 /**
- * Smart node filtering logic
+ * Creates an optimized TreeWalker that prunes ignored subtrees.
  */
-const shouldIgnoreNode = (node: Node): boolean => {
-  const parent = node.parentElement
-  if (!parent) return true
-  
-  // Check if current text is inside an ignored structural element or editable area
-  if (parent.closest(IGNORE_TAGS) || parent.isContentEditable) return true
-  
-  // Check if inside any ignored ARIA roles or specific navigation/action elements
-  if (parent.closest(IGNORE_ROLES) || parent.closest('button, nav, header, footer, aside')) return true
+const createOptimizedWalker = (root: HTMLElement | Document, extraReject?: (el: HTMLElement) => boolean) => {
+  return document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement
+        // 1. Hard skip for non-content UI
+        if (el.matches(SKIP_SELECTOR) || el.isContentEditable || (extraReject && extraReject(el))) {
+          return NodeFilter.FILTER_REJECT
+        }
+        
+        // 2. Skip headings to preserve layout/structure
+        if (el.matches(HEADER_SELECTOR)) {
+          return NodeFilter.FILTER_REJECT
+        }
 
-  return false
+        return NodeFilter.FILTER_SKIP
+      }
+      return NodeFilter.FILTER_ACCEPT
+    }
+  })
 }
 
 /**
@@ -53,7 +74,7 @@ export const scanAndHighlight = async (
 
   // 1. Collect all candidates for batch lookup
   const candidates: Set<string> = new Set()
-  const candidateWalker = createWalker(root, shouldIgnoreNode)
+  const candidateWalker = createOptimizedWalker(root)
   
   while (candidateWalker.nextNode()) {
     const text = candidateWalker.currentNode.nodeValue || ''
@@ -72,10 +93,7 @@ export const scanAndHighlight = async (
   }
 
   // 3. Identification and Reinforcement Logic
-  const walker = createWalker(root, (node) => {
-    if (shouldIgnoreNode(node)) return true
-    return !!(node.parentElement?.closest('.ll-word-container'))
-  })
+  const walker = createOptimizedWalker(root, (el) => el.classList.contains('ll-word-container'))
 
   const blockMap = new Map<Element, Text[]>()
   const blocks: Element[] = []

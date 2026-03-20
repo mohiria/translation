@@ -21,13 +21,12 @@ describe('Scanner Unit Tests - Smart Filtering & Reinforcement', () => {
     expect(document.getElementById('target')?.querySelector('.ll-word-container')).not.toBeNull()
   })
 
-  it('should implement Spaced Reinforcement (skip 3 paragraphs)', async () => {
+  it('should implement Spaced Reinforcement (skip 1 paragraph)', async () => {
     document.body.innerHTML = `
       <p id="p1">apple (show)</p>
       <p id="p2">apple (skip 1)</p>
-      <p id="p3">apple (skip 2)</p>
-      <p id="p4">apple (skip 3)</p>
-      <p id="p5">apple (refresh show)</p>
+      <p id="p3">apple (refresh show)</p>
+      <p id="p4">apple (skip 2)</p>
     `
     const mockDict = { 'apple': { meaning: '苹果', ipa: 'ˈæpl' } } as any
     await scanAndHighlight(document.body, 'CEFR_A1', new Set(), mockDict)
@@ -36,9 +35,8 @@ describe('Scanner Unit Tests - Smart Filtering & Reinforcement', () => {
 
     expect(getT('p1')).toContain('苹果')
     expect(getT('p2')).toBe('')
-    expect(getT('p3')).toBe('')
+    expect(getT('p3')).toContain('苹果')
     expect(getT('p4')).toBe('')
-    expect(getT('p5')).toContain('苹果')
   })
 
   it('should unhighlight specific words correctly', async () => {
