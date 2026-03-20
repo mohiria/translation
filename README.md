@@ -28,16 +28,19 @@
 你是 CET-4 水平？还是雅思 7 分？设置你的等级，**In Reading** 将自动隐藏所有你“本该认识”的单词。我们拒绝信息过载，只标注那些真正处于你认知边界的词汇。
 ![等级设置示例](docs/images/extension-page-1.png)
 
-### 3. 智能上下文过滤 (Context-Aware)
-我们明白 `Pipeline` 在技术文档中是术语，在标题中是专有名词。**In Reading** 能够智能跳过标题、导航栏及特定语境下的词汇，保护网页原始结构，不产生视觉噪音。
+### 3. 智能结构保护 (DOM Friendly)
+为了最大程度减少对网页原始结构的干扰，**In Reading** 采用了智能剪枝技术。它能自动跳过标题（H1-H6）、导航栏及侧边栏等结构化区域，确保翻译注解只出现在最适合阅读的正文部分，在保护页面布局不被破坏的同时，为你剔除视觉噪音。
 
 ### 4. 强大的多级配置
 无论是发音风格选择，还是生词本管理，亦或是接入下一代 AI / LLM 引擎（如 Gemini, OpenAI），**In Reading** 都提供了精致且直观的配置界面。
 
-<div align="center" style="display: flex; justify-content: center; gap: 20px; align-items: flex-start;">
-  <img src="docs/images/extension-page-2.png" width="45%" />
-  <img src="docs/images/extension-page-3.png" width="45%" />
-</div>
+<table align="center" border="0">
+  <tr>
+    <td valign="top" align="center"><img src="docs/images/extension-page-2.png" width="320" /></td>
+    <td width="20"></td>
+    <td valign="top" align="center"><img src="docs/images/extension-page-3.png" width="320" /></td>
+  </tr>
+</table>
 
 ---
 
