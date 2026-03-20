@@ -25,7 +25,7 @@ export const Options = () => {
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', color: '#333', fontFamily: 'sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Settings size={32} /> Fluency Settings
+          <Settings size={32} /> In Reading Settings
         </h1>
         {savedStatus && (
           <span style={{ color: '#4caf50', display: 'flex', alignItems: 'center', gap: '5px' }}>

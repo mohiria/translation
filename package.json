@@ -1,7 +1,7 @@
 {
-  "name": "language-learning-translator",
+  "name": "in-reading",
   "version": "0.1.0",
-  "description": "A learning-oriented browser extension for intelligent word and phrase explanation.",
+  "description": "An immersive reading assistant for foreign language learners. Stay in the flow with level-aware inline annotations while reading native content.",
   "type": "module",
   "scripts": {
     "dev": "vite",

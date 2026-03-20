@@ -258,7 +258,7 @@ export const Popup = () => {
   return (
     <div style={{ width: '300px', padding: '12px', fontFamily: 'sans-serif', maxHeight: '500px', overflowY: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Fluency</h2>
+        <h2 style={{ fontSize: '1.1rem', margin: 0, color: '#4b8bf5' }}>In Reading</h2>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={() => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888' }}>
             <Keyboard size={18} />

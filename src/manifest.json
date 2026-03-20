@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Language Learning Translator",
+  "name": "In Reading",
   "version": "0.1.0",
-  "description": "Intelligent word and phrase explanation for language learners.",
+  "description": "The immersive reading assistant for foreign language learners. Master native content with smart, level-aware annotations designed for natural language acquisition.",
   "permissions": [
     "storage",
     "activeTab"
