@@ -1,6 +1,6 @@
 # In Reading - 进入沉浸式外语习得境界
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/your-repo/in-reading)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/mohiria/in-reading)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > **"The best way to learn a language is to get lost in its stories."**  
@@ -73,7 +73,7 @@
 
 **In Reading** 正在不断进化。如果你有任何关于“沉浸感”的建议，欢迎交流：
 
-- **GitHub Issue**: [提交反馈](https://github.com/your-repo/in-reading/issues)
+- **GitHub Issue**: [提交反馈](https://github.com/mohiria/in-reading/issues)
 - **核心理念**: 帮助每一位学习者跨越“查词期”，抵达“自由阅读期”。
 
 ---
