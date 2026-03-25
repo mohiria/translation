@@ -254,8 +254,7 @@ const createWordContainer = (match: any, pronunciation: string, showIPA: boolean
   translation.style.userSelect = 'none'
   
   const exp = match.explanation
-  const ipaLabel = pronunciation === 'UK' ? 'UK ' : 'US '
-  const ipaPart = (showIPA && exp.ipa) ? `${ipaLabel}${exp.ipa}` : ''
+  const ipaPart = (showIPA && exp.ipa) ? `${exp.ipa}` : ''
   const separator = ipaPart ? ' · ' : ''
   
   translation.textContent = ` (${ipaPart}${separator}${exp.meaning})`

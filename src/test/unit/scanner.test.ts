@@ -39,6 +39,26 @@ describe('Scanner Unit Tests - Smart Filtering & Reinforcement', () => {
     expect(getT('p4')).toBe('')
   })
 
+  it('should not show US/UK prefix in on-page translations', async () => {
+    document.body.innerHTML = '<p id="target">apple</p>'
+    const mockDict = { 'apple': { meaning: '苹果', ipa: 'ˈæpl' } } as any
+    
+    // Test with US
+    await scanAndHighlight(document.body, 'CEFR_A1', new Set(), mockDict, 'US')
+    let translation = document.querySelector('.ll-translation')?.textContent || ''
+    expect(translation).toContain('ˈæpl')
+    expect(translation).not.toContain('US ')
+    expect(translation).not.toContain('UK ')
+
+    // Test with UK
+    document.body.innerHTML = '<p id="target">apple</p>'
+    await scanAndHighlight(document.body, 'CEFR_A1', new Set(), mockDict, 'UK')
+    translation = document.querySelector('.ll-translation')?.textContent || ''
+    expect(translation).toContain('ˈæpl')
+    expect(translation).not.toContain('US ')
+    expect(translation).not.toContain('UK ')
+  })
+
   it('should unhighlight specific words correctly', async () => {
     document.body.innerHTML = '<p>apple pie</p>'
     const mockDict = { 'apple': { meaning: '苹果' } } as any

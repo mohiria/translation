@@ -144,7 +144,7 @@ export const SelectionPopup = () => {
           <div style={{ fontSize: '0.9rem', marginBottom: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
             {selection.explanation.ipa && (
               <span style={{ color: '#1a73e8', backgroundColor: '#f0f4ff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>
-                {selection.explanation.ipa}
+                {(settings?.pronunciation || 'US') + ' ' + selection.explanation.ipa}
               </span>
             )}
             {selection.explanation.cefr && (
