@@ -6,6 +6,7 @@ import { WordExplanation } from '../../common/types'
 import { BookOpen, Plus, Trash2 } from 'lucide-react'
 import { VoiceIcon } from './VoiceIcon'
 import { getPreferredIPA } from '../../common/utils/format'
+import confusionMap from '../../../public/dictionaries/confusion-map.json'
 
 export const SelectionPopup = () => {
   const { settings } = useSettings()
@@ -52,11 +53,16 @@ export const SelectionPopup = () => {
       }
 
       const rect = sel.getRangeAt(0).getBoundingClientRect()
-      const localExp = await lookupWordInDB(text)
-      const isSaved = vocabulary.some(v => v.word.toLowerCase() === text.toLowerCase())
+      const lowerText = text.toLowerCase()
+      
+      // Dictionary A (Confusion Map) is now standardized
+      const confusionEntry = (confusionMap as Record<string, any>)[lowerText]
+      const localExp = confusionEntry || await lookupWordInDB(text)
+      
+      const isSaved = vocabulary.some(v => v.word.toLowerCase() === lowerText)
 
       if (isSaved || localExp) {
-        const baseExp = isSaved ? vocabulary.find(v => v.word.toLowerCase() === text.toLowerCase())! : localExp!
+        const baseExp = isSaved ? vocabulary.find(v => v.word.toLowerCase() === lowerText)! : localExp!
         const explanation = { ...baseExp, ipa: getPreferredIPA(baseExp, settings?.pronunciation || 'US') }
         setSelection({ text, rect, explanation, isSaved })
         return
@@ -113,59 +119,108 @@ export const SelectionPopup = () => {
   const style: React.CSSProperties = {
     ...calculatePosition(),
     backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
-    padding: '12px', zIndex: 2147483647, fontFamily: 'sans-serif', border: '1px solid #ddd',
-    minWidth: '220px', maxWidth: '320px', color: '#333', userSelect: 'none',
+    padding: '14px', zIndex: 2147483647, fontFamily: 'sans-serif', border: '1px solid #ddd',
+    minWidth: '240px', maxWidth: '340px', color: '#333', userSelect: 'none',
     boxSizing: 'border-box', pointerEvents: 'auto'
   }
 
   if (!selection) return null
 
+  const currentPron = settings?.pronunciation || 'US'
+  const exp = selection.explanation
+
+  let showSingleHeaderIPA = false
+  let headerIPA = ''
+  if (exp?.entries) {
+    const ipas = exp.entries.map(e => currentPron === 'UK' ? e.phon_br : e.phon_n_am)
+    if (new Set(ipas).size === 1) {
+      showSingleHeaderIPA = true
+      headerIPA = ipas[0]
+    }
+  } else if (exp?.ipa) {
+    showSingleHeaderIPA = true
+    headerIPA = exp.ipa
+  }
+
   return (
     <div style={style}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-          <BookOpen size={16} color="#4b8bf5" />
-          <span style={{ fontWeight: 'bold', fontSize: '1.05rem', wordBreak: 'break-word' }}>{selection.text}</span>
-          <VoiceIcon 
-            word={selection.text} 
-            pronunciation={settings?.pronunciation || 'US'} 
-            size={16} 
-          />
-        </div>
-        {selection.explanation?.source && (
-          <span style={{ fontSize: '10px', backgroundColor: '#f5f5f5', color: '#888', padding: '2px 6px', borderRadius: '4px', border: '1px solid #eee' }}>
-            {selection.explanation.source}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+        <BookOpen size={18} color="#4b8bf5" />
+        <span style={{ fontWeight: 'bold', fontSize: '1.1rem', flex: 1 }}>{selection.text}</span>
+        {exp?.source && (
+          <span style={{ fontSize: '10px', backgroundColor: '#f5f5f5', color: '#888', padding: '2px 6px', borderRadius: '4px' }}>
+            {exp.source}
           </span>
         )}
       </div>
 
-      {loading ? <div style={{ textAlign: 'center', padding: '10px', color: '#999' }}>Translating...</div> : selection.explanation && (
-        <div style={{ wordWrap: 'break-word', wordBreak: 'normal', overflowWrap: 'anywhere' }}>
-          <div style={{ fontSize: '0.9rem', marginBottom: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {selection.explanation.ipa && (
-              <span style={{ color: '#1a73e8', backgroundColor: '#f0f4ff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>
-                {(settings?.pronunciation || 'US') + ' ' + selection.explanation.ipa}
-              </span>
-            )}
-            {selection.explanation.cefr && (
-              <span style={{ fontSize: '0.7rem', backgroundColor: '#e6fffa', color: '#319795', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold', border: '1px solid #b2f5ea' }}>
-                {selection.explanation.cefr.toUpperCase()}
-              </span>
-            )}
-          </div>
+      {loading ? <div style={{ textAlign: 'center', padding: '10px', color: '#999' }}>Translating...</div> : exp && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           
-          <div style={{ fontSize: '0.95rem', lineHeight: '1.5', color: '#444' }}>
-            {selection.explanation.definitions?.length ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {selection.explanation.definitions.map((def, idx) => (
-                  <div key={idx} style={{ borderLeft: '2px solid #eee', paddingLeft: '8px' }}>
-                    <span style={{ fontStyle: 'italic', color: '#888', marginRight: '6px', fontSize: '0.8rem' }}>{def.type}</span>
-                    <span style={{ color: '#333' }}>{def.translation}</span>
+          {showSingleHeaderIPA && headerIPA && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+              <span style={{ color: '#1a73e8', fontWeight: 'bold', fontSize: '12px' }}>{currentPron}</span>
+              <span style={{ color: '#5f6368', fontSize: '13px' }}>{headerIPA}</span>
+              <VoiceIcon 
+                word={selection.text} 
+                pronunciation={currentPron} 
+                size={16} 
+              />
+            </div>
+          )}
+
+          <div style={{ fontSize: '14px', lineHeight: '1.5', color: '#202124' }}>
+            {exp.entries ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {exp.entries.map((entry, idx) => (
+                  <div key={idx} style={{ 
+                    borderTop: idx > 0 ? '1px solid #f0f0f0' : 'none', 
+                    paddingTop: idx > 0 ? '8px' : '0'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontStyle: 'italic', color: '#1a73e8', fontSize: '12px', fontWeight: 'bold' }}>
+                          {entry.type}
+                        </span>
+                        {!showSingleHeaderIPA && (
+                          <span style={{ fontSize: '12px', color: '#666' }}>
+                            {currentPron === 'UK' ? entry.phon_br : entry.phon_n_am}
+                          </span>
+                        )}
+                      </div>
+                      {!showSingleHeaderIPA && (
+                        <VoiceIcon 
+                          word={selection.text} 
+                          pronunciation={currentPron}
+                          size={14} 
+                          color="#888" 
+                        />
+                      )}
+                    </div>
+                    <div style={{ fontWeight: 500 }}>{entry.translation}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ borderLeft: '2px solid #eee', paddingLeft: '8px' }}>{selection.explanation.meaning}</div>
+              <>
+                {!showSingleHeaderIPA && exp.cefr && (
+                   <span style={{ fontSize: '10px', backgroundColor: '#e6fffa', color: '#319795', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold', marginBottom: '6px', display: 'inline-block' }}>
+                    {String(exp.cefr).toUpperCase()}
+                  </span>
+                )}
+                {exp.definitions?.length ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {exp.definitions.map((def, idx) => (
+                      <div key={idx}>
+                        <span style={{ fontStyle: 'italic', color: '#888', marginRight: '8px', fontSize: '12px' }}>{def.type}</span>
+                        <span>{def.translation}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div>{exp.meaning}</div>
+                )}
+              </>
             )}
           </div>
           
@@ -178,7 +233,7 @@ export const SelectionPopup = () => {
               border: selection.isSaved ? '1px solid #ffccc7' : 'none', 
               borderRadius: '6px', cursor: 'pointer', marginTop: '12px', 
               display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              gap: '6px', fontWeight: '500', transition: 'all 0.2s'
+              gap: '6px', fontWeight: '500', fontSize: '13px'
             }}
           >
             {selection.isSaved ? <><Trash2 size={14} /> Remove</> : <><Plus size={14} /> Add to Vocabulary</>}

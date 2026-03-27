@@ -8,6 +8,29 @@ const OUTPUT_FILE = path.join(OUTPUT_DIR, 'dictionary-core.json.gz');
 const VERSION_FILE = path.join(OUTPUT_DIR, 'version.json');
 const OXFORD_SOURCE = path.join(process.cwd(), 'oxford_5000.json');
 
+const POS_STANDARD_MAP: Record<string, string> = {
+  'n': 'noun',
+  'v': 'verb',
+  'adj': 'adjective',
+  'adv': 'adverb',
+  'n.': 'noun',
+  'v.': 'verb',
+  'adj.': 'adjective',
+  'adv.': 'adverb',
+  'indefinite article': 'determiner',
+  'definite article': 'determiner',
+  'auxiliary verb': 'verb',
+  'modal verb': 'verb',
+  'linking verb': 'verb',
+  'ordinal number': 'number',
+  'infinitive marker': 'particle'
+};
+
+const standardizePOS = (pos: string) => {
+  const lower = pos.toLowerCase().trim();
+  return POS_STANDARD_MAP[lower] || lower;
+};
+
 const main = async () => {
     console.log(`Starting Oxford Dictionary Integration...`);
     
@@ -25,25 +48,15 @@ const main = async () => {
         // Helper to clean translation
         const cleanTranslation = (word: string, fullTranslation: string) => {
             if (!fullTranslation) return '';
-
-            // 1. Remove content inside () or （）
             let short = fullTranslation.replace(/[\(\（].*?[\)\）]/g, ' ').trim();
-            
-            // 2. Clean up leading/trailing punctuation and extra spaces
             short = short.replace(/\s+/g, ' ')
                          .replace(/^[，,；;：:、]+|[，,；;：:、]+$/g, '')
                          .trim();
-
-            // 3. Fallback: If removing brackets resulted in empty string
             if (!short) {
                 const match = fullTranslation.match(/[\(\（](.*?)[\)\）]/);
-                if (match && match[1]) {
-                    short = match[1].trim();
-                } else {
-                    short = fullTranslation;
-                }
+                if (match && match[1]) short = match[1].trim();
+                else short = fullTranslation;
             }
-            
             return short;
         };
 
@@ -58,28 +71,11 @@ const main = async () => {
             groupedMap.get(word)!.push(item);
         });
 
-        console.log(`Grouped into ${groupedMap.size} unique words.`);
-
-        const typeAbbr: Record<string, string> = {
-            'noun': 'n.',
-            'verb': 'v.',
-            'adjective': 'adj.',
-            'adverb': 'adv.',
-            'preposition': 'prep.',
-            'pronoun': 'pron.',
-            'conjunction': 'conj.',
-            'determiner': 'det.',
-            'exclamation': 'int.',
-            'number': 'num.',
-            'modal verb': 'modal v.',
-            'auxiliary verb': 'aux v.'
-        };
-
         entries = Array.from(groupedMap.entries()).map(([word, items]) => {
             const definitions = items.map(item => {
                 const fullTranslation = item.translation || '';
                 return {
-                    type: item.type,
+                    type: standardizePOS(item.type),
                     cefr: item.cefr,
                     definition: item.definition,
                     example: item.example,
@@ -94,9 +90,9 @@ const main = async () => {
                 if (!transGroups.has(d.short_translation)) {
                     transGroups.set(d.short_translation, []);
                 }
-                const abbr = typeAbbr[d.type.toLowerCase()] || d.type;
-                if (!transGroups.get(d.short_translation)!.includes(abbr)) {
-                    transGroups.get(d.short_translation)!.push(abbr);
+                const fullType = d.type;
+                if (!transGroups.get(d.short_translation)!.includes(fullType)) {
+                    transGroups.get(d.short_translation)!.push(fullType);
                 }
             });
 
@@ -107,13 +103,11 @@ const main = async () => {
             });
             const meaning = combinedMeaningParts.join('; ');
 
-            // Construct combined types
-            const allTypes = Array.from(new Set(items.map(i => typeAbbr[i.type.toLowerCase()] || i.type)));
+            // Construct combined types (full names)
+            const allTypes = Array.from(new Set(items.map(i => standardizePOS(i.type))));
             
-            // Get most advanced CEFR
-            const cefrOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-            const cefrs = items.map(i => i.cefr.toLowerCase());
-            const topCefr = cefrs.sort((a, b) => cefrOrder.indexOf(b) - cefrOrder.indexOf(a))[0];
+            // Get all unique CEFRs
+            const cefrs = Array.from(new Set(items.map(i => i.cefr.toLowerCase())));
 
             return {
                 word: word,
@@ -121,21 +115,11 @@ const main = async () => {
                 ipa_us: items[0].phon_n_am,
                 meaning: meaning,
                 type: allTypes.join(', '),
-                cefr: topCefr,
-                tags: Array.from(new Set(cefrs)),
+                cefr: cefrs, // Simplified to array of all cefr levels
                 context: items[0].example,
                 definitions: definitions,
                 source: 'Oxford 5000'
             };
-        });
-
-        // Debug log for some problematic words
-        const testWords = ['switch', 'schedule', 'a', 'do'];
-        testWords.forEach(w => {
-            const entry = entries.find(e => e.word === w);
-            if (entry) {
-                console.log(`Merged "${w}": "${entry.meaning}"`);
-            }
         });
     } else {
         console.error('Oxford source file not found at:', OXFORD_SOURCE);

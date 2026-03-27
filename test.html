@@ -3,133 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Language Learning Extension Test Page</title>
+    <title>In-Reading: 综合逻辑压力测试</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            max-width: 900px;
             margin: 40px auto;
-            padding: 0 20px;
-            color: #333;
+            padding: 0 30px;
+            color: #2c3e50;
+            background-color: #fff;
         }
-        h1 {
-            color: #1a73e8;
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #4b8bf5;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
         }
-        .box {
-            border: 1px solid #eee;
+        h1 { color: #4b8bf5; margin-bottom: 5px; }
+        .metadata { font-size: 0.9em; color: #7f8c8d; margin-bottom: 20px; }
+        
+        .demo-nav {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .tag-heteronym { background: #ffeaa7; color: #d35400; border: 1px solid #fab1a0; }
+        .tag-homograph { background: #dff9fb; color: #0984e3; border: 1px solid #81ecec; }
+        .tag-inflection { background: #f1f2f6; color: #2f3542; border: 1px solid #dfe4ea; }
+
+        .article-content {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            font-size: 1.1em;
+        }
+        b { color: #2980b9; }
+        .highlight-box {
+            margin-top: 40px;
             padding: 20px;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-        }
-        code {
-            background: #eee;
-            padding: 2px 4px;
-            border-radius: 4px;
+            background: #f9f9f9;
+            border-left: 5px solid #4b8bf5;
+            font-size: 0.9em;
         }
     </style>
 </head>
 <body>
-    <h1>Project Overview</h1>
-    <p>
-        This is a test page for our <strong>Language Learning Extension</strong>. 
-        The goal of this project is to help users improve their language <strong>proficiency</strong> 
-        through natural <strong>acquisition</strong> while reading content in their <strong>browser</strong>.
-    </p>
 
-    <div class="box">
-        <h2>Key Features</h2>
-        <ul>
-            <li>Intelligent <strong>extension</strong> logic for word detection.</li>
-            <li>Artificial <strong>intelligence</strong> powered explanations.</li>
-            <li><strong>Contextual</strong> understanding of complex phrases.</li>
-        </ul>
+    <div class="header">
+        <h1>The Guardian of the Laboratory</h1>
+        <div class="metadata">综合翻译逻辑测试文章 | 覆盖 Dictionary A, B 及词形还原</div>
     </div>
 
-    <div class="box" style="margin-top: 20px; border-left: 4px solid #34a853;">
-        <h2>Proficiency Level Test</h2>
-        <p>Change your proficiency level in the extension settings and see which words remain highlighted (Blue) and which disappear (filtered out).</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <tr style="background: #eee;">
-                <th style="padding: 8px; border: 1px solid #ddd; text-align: left; width: 150px;">Level</th>
-                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Test Words (Should highlight if your level is AT or BELOW this)</th>
-            </tr>
-            <tr>
-                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">ZK (初中)</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">apple, school, time</td>
-            </tr>
-            <tr>
-                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">GK (高中)</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">browser, system, program</td>
-            </tr>
-            <tr>
-                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">CET-4 (四级)</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">individual, specific, function, require, available</td>
-            </tr>
-            <tr>
-                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">CET-6 (六级/考研)</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">intelligence, efficient, component, analyze, mechanism, distinct</td>
-            </tr>
-            <tr>
-                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">C1 (雅思/托福)</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">acquisition, contextual, implementation, comprehensive, pragmatic</td>
-            </tr>
-            <tr>
-                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">C2 (GRE/Expert)</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">paradigm, algorithm, epistemology, nuance, ambiguous</td>
-            </tr>
-        </table>
+    <div class="demo-nav">
+        <span class="tag tag-heteronym">异音词 (隐藏音标/图标)</span>
+        <span class="tag tag-homograph">同音词 (显示音标/图标)</span>
+        <span class="tag tag-inflection">变形词 (词形还原测试)</span>
     </div>
 
-    <div class="box" style="margin-top: 20px; border-left: 4px solid #4b8bf5;">
-        <h2>Pronunciation Test (US vs UK)</h2>
+    <div class="article-content">
         <p>
-            Test the switch between American and British pronunciation with these words:
+            The <b>lead</b> scientist sat by the window as the <b>wind</b> began to blow through the autumn <b>leaves</b>. 
+            He held a <b>record</b> of the <b>minute</b> changes he had <b>recorded</b> in the local <b>environment</b>. 
+            His <b>mind</b> was not <b>content</b> with the current <b>content</b> of the report, as he suspected a <b>leak</b> of <b>lead</b> into the river <b>bank</b> near the <b>park</b>.
         </p>
-        <ul>
-            <li><strong>schedule</strong> (US: /ˈskɛdʒuːl/, UK: /ˈʃɛdʒuːl/)</li>
-            <li><strong>privacy</strong> (US: /ˈpraɪvəsi/, UK: /ˈprɪvəsi/)</li>
-            <li><strong>leisure</strong> (US: /ˈliːʒər/, UK: /ˈlɛʒər/)</li>
-            <li><strong>advertisement</strong> (US: /ˌædvərˈtaɪzmənt/, UK: /ədˈvɜːtɪsmənt/)</li>
-            <li><strong>vitamin</strong> (US: /ˈvaɪtəmɪn/, UK: /ˈvɪtəmɪn/)</li>
-            <li><strong>mobile</strong> (US: /ˈmoʊbl/, UK: /ˈmoʊbaɪl/)</li>
-        </ul>
+
+        <p>
+            Suddenly, he noticed a <b>rose</b> in a <b>glass</b> jar on his <b>table</b>. As the sun <b>rose</b> higher, 
+            a single <b>tear</b> escaped his eye. He had to <b>tear</b> himself away from these <b>memories</b> 
+            to <b>focus</b> on his <b>advanced</b> <b>research</b>. He knew he must <b>match</b> his <b>firm</b> 
+            beliefs with <b>perfect</b> <b>implementation</b> to <b>improve</b> the situation.
+        </p>
+
+        <p>
+            He decided to <b>close</b> the <b>file</b> and take a <b>second</b> to <b>watch</b> the <b>match</b> 
+            outside. A <b>bird</b> began to <b>fly</b> over the <b>plant</b> nursery, its wings <b>flapping</b> in a 
+            rhythmic <b>wave</b>. This <b>kind</b> of <b>natural</b> <b>sound</b> always <b>improved</b> his mood 
+            and helped him <b>will</b> himself to continue his <b>long-term</b> <b>project</b>.
+        </p>
     </div>
 
-    <div class="box" style="margin-top: 20px; border-left: 4px solid #ff9800;">
-        <h2>Multi-POS Verification</h2>
-        <p>Test words with multiple parts of speech (Merged entries):</p>
-        <ul>
-            <li><strong>back</strong> (n. 背部; adv. 向后; v. 支持; adj. 后面的)</li>
-            <li><strong>close</strong> (adj. 靠近的; v. 关闭; n. 结束)</li>
-            <li><strong>present</strong> (adj. 现在的; n. 礼物; v. 呈现/赠送)</li>
-            <li><strong>record</strong> (n. 记录; v. 录制)</li>
-            <li><strong>content</strong> (n. 内容; adj. 满足的)</li>
-            <li><strong>project</strong> (n. 项目; v. 投影/规划)</li>
-        </ul>
+    <div class="highlight-box">
+        <strong>测试指南：</strong>
+        <ol>
+            <li><strong>Dictionary A 异音屏蔽</strong>：悬停在 <b>lead</b>, <b>wind</b>, <b>tear</b>, <b>content</b> 上。页面应只显示中文，不显示喇叭图标和音标。</li>
+            <li><strong>Dictionary A 同音展示</strong>：悬停在 <b>rose</b>, <b>bank</b>, <b>match</b>, <b>watch</b> 上。页面应显示喇叭图标、音标和多重含义。</li>
+            <li><strong>词形还原</strong>：悬停在 <b>recorded</b>, <b>leaves</b>, <b>improved</b> 上。系统应能准确识别出它们的原型并给出高级词典释义。</li>
+            <li><strong>多义项弹窗</strong>：点击以上任何加粗单词，在弹窗中验证是否使用了<strong>全称词性</strong>（如 noun 而非 n.）以及精准的音标格式。</li>
+        </ol>
     </div>
 
-    <p>
-        Normally, you would read a long article, and the tool would highlight only the 
-        words that match your current learning level. 
-    </p>
-
-    <p>
-        <em>Note:</em> Words inside <code>code tags like this: intelligence</code> should be ignored by the scanner.
-    </p>
-
-    <div id="dynamic-content">
-        <!-- Content added via JS to test MutationObserver -->
-    </div>
-
-    <script>
-        setTimeout(() => {
-            const div = document.getElementById('dynamic-content');
-            const p = document.createElement('p');
-            p.innerHTML = 'This paragraph was added <strong>dynamically</strong> after 3 seconds to test the <strong>intelligence</strong> of our observer.';
-            div.appendChild(p);
-        }, 3000);
-    </script>
 </body>
 </html>

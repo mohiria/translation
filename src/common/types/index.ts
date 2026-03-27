@@ -1,4 +1,4 @@
-export type ProficiencyLevel = 'CEFR_A1' | 'CEFR_A2' | 'CEFR_B1' | 'CET4' | 'CET6' | 'CEFR_C1' | 'CEFR_C2'
+export type ProficiencyLevel = 'CEFR_A1' | 'CEFR_A2' | 'CEFR_B1' | 'CEFR_B2' | 'CET4' | 'CET6' | 'CEFR_C1' | 'CEFR_C2'
 
 export type DictTag = 'zk' | 'gk' | 'cet4' | 'cet6' | 'ky' | 'ielts' | 'toefl' | 'gre' | 'a1' | 'a2' | 'b1' | 'b2' | 'c1' | 'c2'
 
@@ -37,6 +37,15 @@ export interface WordDefinition {
   short_translation: string
 }
 
+export interface ConfusionEntry {
+  type: string
+  cefr: string
+  phon_br: string
+  phon_n_am: string
+  translation: string
+  definition?: string
+}
+
 export interface WordExplanation {
   word: string
   ipa?: string
@@ -44,12 +53,13 @@ export interface WordExplanation {
   ipa_uk?: string
   meaning: string
   context?: string
-  tags?: DictTag[]
+  cefr?: string | string[] // Standardized field for level
   source?: string
   type?: string
-  cefr?: string
   definitions?: WordDefinition[]
+  entries?: ConfusionEntry[] // Support for advanced confusion-map structure
   custom?: boolean
+  hideIPA?: boolean // UI hint for heteronyms
 }
 
 export interface SavedWord extends WordExplanation {

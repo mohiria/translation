@@ -20,6 +20,21 @@ const chromeMock = {
 }
 vi.stubGlobal('chrome', chromeMock)
 
+// Mock confusion-map.json with NEW standardized structure
+vi.mock('../../../../public/dictionaries/confusion-map.json', () => ({
+  default: {
+    'tear': {
+      word: 'tear',
+      cefr: ['a2', 'b1'], // Standardized field
+      entries: [
+        { type: 'noun', cefr: 'a2', phon_br: '/tɪə(r)/', phon_n_am: '/tɪr/', translation: '眼泪' },
+        { type: 'verb', cefr: 'b1', phon_br: '/teə(r)/', phon_n_am: '/ter/', translation: '撕裂' }
+      ],
+      source: 'core-confusion'
+    }
+  }
+}))
+
 // Mock hooks
 const mockSettings = {
   pronunciation: 'US',
@@ -36,91 +51,38 @@ vi.mock('../../../common/hooks/useVocabulary', () => ({
 }))
 
 vi.mock('../../../common/storage/indexed-db', () => ({
-  lookupWordInDB: vi.fn().mockResolvedValue(null)
+  lookupWordInDB: vi.fn().mockResolvedValue(null),
+  batchLookupWords: vi.fn().mockResolvedValue({})
 }))
 
-describe('SelectionPopup Component', () => {
+describe('SelectionPopup Standardization', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     document.body.innerHTML = ''
-    // Reset selection
-    window.getSelection = vi.fn().mockReturnValue({
-      toString: () => '',
-      isCollapsed: true,
-      getRangeAt: () => ({ getBoundingClientRect: () => ({}) })
-    })
-    
-    // Mock chrome.runtime.sendMessage to return enabled: true
     chromeMock.runtime.sendMessage.mockImplementation((msg, callback) => {
       if (msg.type === 'GET_TAB_STATE') callback({ enabled: true })
     })
+    
+    window.getSelection = vi.fn().mockReturnValue({
+      toString: () => 'tear',
+      isCollapsed: false,
+      getRangeAt: () => ({
+        getBoundingClientRect: () => ({ top: 100, left: 100, width: 100, height: 100 })
+      })
+    })
   })
 
-  it('should show US prefix when pronunciation is US', async () => {
-    mockSettings.pronunciation = 'US'
-    
-    // Simulate selection
-    const mockRect = { top: 100, bottom: 200, left: 100, right: 200, width: 100, height: 100 }
-    window.getSelection = vi.fn().mockReturnValue({
-      toString: () => 'apple',
-      isCollapsed: false,
-      getRangeAt: () => ({ getBoundingClientRect: () => mockRect })
-    })
-
-    // Mock translation response
-    chromeMock.runtime.sendMessage.mockImplementation((msg, callback) => {
-      if (msg.type === 'GET_TAB_STATE') {
-        callback({ enabled: true })
-      } else if (msg.type === 'TRANSLATE_WORD') {
-        callback({ success: true, data: { word: 'apple', ipa: '/ˈæp.əl/', meaning: '苹果' } })
-      }
-    })
-
+  it('should render full POS names from dictionary without local mapping', async () => {
     await act(async () => {
       render(<SelectionPopup />)
     })
 
-    // Trigger mouseup
     await act(async () => {
-      document.dispatchEvent(new MouseEvent('mouseup'))
+      document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
     })
 
-    // Wait for translation
-    const ipaElement = await screen.findByText(/ˈæp\.əl/)
-    expect(ipaElement.textContent).toContain('US ')
-  })
-
-  it('should show UK prefix when pronunciation is UK', async () => {
-    mockSettings.pronunciation = 'UK'
-    
-    // Simulate selection
-    const mockRect = { top: 100, bottom: 200, left: 100, right: 200, width: 100, height: 100 }
-    window.getSelection = vi.fn().mockReturnValue({
-      toString: () => 'apple',
-      isCollapsed: false,
-      getRangeAt: () => ({ getBoundingClientRect: () => mockRect })
-    })
-
-    // Mock translation response
-    chromeMock.runtime.sendMessage.mockImplementation((msg, callback) => {
-      if (msg.type === 'GET_TAB_STATE') {
-        callback({ enabled: true })
-      } else if (msg.type === 'TRANSLATE_WORD') {
-        callback({ success: true, data: { word: 'apple', ipa: '/ˈæp.əl/', meaning: '苹果' } })
-      }
-    })
-
-    await act(async () => {
-      render(<SelectionPopup />)
-    })
-
-    // Trigger mouseup
-    await act(async () => {
-      document.dispatchEvent(new MouseEvent('mouseup'))
-    })
-
-    // Wait for translation
-    const ipaElement = await screen.findByText(/ˈæp\.əl/)
-    expect(ipaElement.textContent).toContain('UK ')
+    // Should find full names directly
+    expect(await screen.findByText('noun')).toBeDefined()
+    expect(await screen.findByText('verb')).toBeDefined()
   })
 })

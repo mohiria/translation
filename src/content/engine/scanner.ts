@@ -235,6 +235,9 @@ const createWordContainer = (match: any, pronunciation: string, showIPA: boolean
   container.setAttribute('data-word', match.word.toLowerCase())
   container.setAttribute('contenteditable', 'false')
   
+  const exp = match.explanation
+  const shouldHideIPA = exp.hideIPA
+
   // Base Styles
   Object.assign(container.style, {
     backgroundColor: 'rgba(75, 139, 245, 0)',
@@ -263,39 +266,41 @@ const createWordContainer = (match: any, pronunciation: string, showIPA: boolean
   container.appendChild(span)
 
   // Voice Icon (Refined Two-Arc Style)
-  const voiceBtn = document.createElement('span')
-  voiceBtn.className = 'll-voice-btn'
-  voiceBtn.setAttribute('aria-hidden', 'true')
-  voiceBtn.style.cssText = 'user-select:none; margin-left:4px; display:inline-flex; align-items:center; cursor:pointer; padding:2px; vertical-align:middle;'
-  
-  voiceBtn.innerHTML = `
-    <svg class="youdao-voice-svg" viewBox="0 0 1024 1024" width="14" height="14">
-      <rect class="source" x="256" y="384" width="64" height="256" rx="32" fill="#a1a1a1" />
-      <path class="wave wave-1" d="M448 320c48 0 96 85.3 96 192s-48 192-96 192" stroke="#a1a1a1" stroke-width="80" fill="none" stroke-linecap="round" />
-      <path class="wave wave-2" d="M608 192c80 0 160 143.3 160 320s-80 320-160 320" stroke="#a1a1a1" stroke-width="80" fill="none" stroke-linecap="round" />
-    </svg>
-    <style>
-      @keyframes voiceWaveFade {
-        0% { opacity: 0.3; }
-        50% { opacity: 1; }
-        100% { opacity: 0.3; }
-      }
-      .ll-voice-btn:hover .source { fill: #4b8bf5; }
-      .ll-voice-btn:hover .wave { stroke: #4b8bf5; }
-      .ll-voice-btn.playing .source { fill: #4b8bf5; }
-      .ll-voice-btn.playing .wave { stroke: #4b8bf5; }
-      .ll-voice-btn.playing .wave-1 { animation: voiceWaveFade 0.6s infinite; }
-      .ll-voice-btn.playing .wave-2 { animation: voiceWaveFade 0.6s infinite 0.2s; }
-    </style>
-  `
-  
-  voiceBtn.onclick = (e) => {
-    e.stopPropagation()
-    voiceBtn.classList.add('playing')
-    speak(match.word, pronunciation === 'UK' ? 'en-GB' : 'en-US')
-    setTimeout(() => voiceBtn.classList.remove('playing'), 1200)
+  if (!shouldHideIPA) {
+    const voiceBtn = document.createElement('span')
+    voiceBtn.className = 'll-voice-btn'
+    voiceBtn.setAttribute('aria-hidden', 'true')
+    voiceBtn.style.cssText = 'user-select:none; margin-left:4px; display:inline-flex; align-items:center; cursor:pointer; padding:2px; vertical-align:middle;'
+    
+    voiceBtn.innerHTML = `
+      <svg class="youdao-voice-svg" viewBox="0 0 1024 1024" width="14" height="14">
+        <rect class="source" x="256" y="384" width="64" height="256" rx="32" fill="#a1a1a1" />
+        <path class="wave wave-1" d="M448 320c48 0 96 85.3 96 192s-48 192-96 192" stroke="#a1a1a1" stroke-width="80" fill="none" stroke-linecap="round" />
+        <path class="wave wave-2" d="M608 192c80 0 160 143.3 160 320s-80 320-160 320" stroke="#a1a1a1" stroke-width="80" fill="none" stroke-linecap="round" />
+      </svg>
+      <style>
+        @keyframes voiceWaveFade {
+          0% { opacity: 0.3; }
+          50% { opacity: 1; }
+          100% { opacity: 0.3; }
+        }
+        .ll-voice-btn:hover .source { fill: #4b8bf5; }
+        .ll-voice-btn:hover .wave { stroke: #4b8bf5; }
+        .ll-voice-btn.playing .source { fill: #4b8bf5; }
+        .ll-voice-btn.playing .wave { stroke: #4b8bf5; }
+        .ll-voice-btn.playing .wave-1 { animation: voiceWaveFade 0.6s infinite; }
+        .ll-voice-btn.playing .wave-2 { animation: voiceWaveFade 0.6s infinite 0.2s; }
+      </style>
+    `
+    
+    voiceBtn.onclick = (e) => {
+      e.stopPropagation()
+      voiceBtn.classList.add('playing')
+      speak(match.word, pronunciation === 'UK' ? 'en-GB' : 'en-US')
+      setTimeout(() => voiceBtn.classList.remove('playing'), 1200)
+    }
+    container.appendChild(voiceBtn)
   }
-  container.appendChild(voiceBtn)
 
   // Translation Span
   const translation = document.createElement('span')
@@ -303,8 +308,7 @@ const createWordContainer = (match: any, pronunciation: string, showIPA: boolean
   translation.setAttribute('aria-hidden', 'true')
   translation.style.userSelect = 'none'
   
-  const exp = match.explanation
-  const ipaPart = (showIPA && exp.ipa) ? `${exp.ipa}` : ''
+  const ipaPart = (!shouldHideIPA && showIPA && exp.ipa) ? `${exp.ipa}` : ''
   const separator = ipaPart ? ' · ' : ''
   
   translation.textContent = ` (${ipaPart}${separator}${exp.meaning})`

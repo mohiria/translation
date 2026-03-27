@@ -30,7 +30,6 @@ const findVoiceForLang = (lang: string, voices: SpeechSynthesisVoice[]) => {
   }
 
   // Priority: Prefer Online/High Quality voices if available, otherwise Local
-  // In Chrome, online voices often have better regional distinction
   return filtered.find(v => !v.localService) || filtered[0];
 };
 
@@ -53,16 +52,6 @@ const warmUpTTS = (retryCount = 0) => {
   
   const uk = findVoiceForLang('en-GB', voices);
   if (uk) voiceCache['en-GB'] = uk;
-  
-  const hasEnglish = voices.some(v => v.lang.toLowerCase().startsWith('en'));
-  
-  if (!hasEnglish) {
-    console.error('TTS CRITICAL: NO ENGLISH VOICES FOUND IN BROWSER!');
-    console.log('Available:', voices.map(v => `${v.name} [${v.lang}]`).join(' | '));
-    console.log('TIP: Check Windows "Speech" settings and ensure "English (United Kingdom)" has "Speech" component installed, not just language pack.');
-  } else {
-    console.log(`TTS Ready: US=[${us?.name || 'Auto'}], UK=[${uk?.name || 'Auto'}]`);
-  }
 };
 
 if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -89,66 +78,30 @@ export const speak = (text: string, lang: string = 'en-US') => {
   if (voiceCache[lang]) {
     utterance.voice = voiceCache[lang];
   } else {
-    // 2. Find and Cache (Force refresh voices if needed)
-    let voices = synth.getVoices();
-    
-    // CRITICAL: If voices are empty, try to wait or just proceed. 
-    // Usually subsequent calls to getVoices() will return populated array if it was pending.
-    
-    const foundVoice = findVoiceForLang(lang, voices);
-    
+    // 2. Find and Cache
+    const foundVoice = findVoiceForLang(lang, synth.getVoices());
     if (foundVoice) {
       voiceCache[lang] = foundVoice;
       utterance.voice = foundVoice;
-    } else {
-      // 3. Fallback logic
-      const baseLang = lang.split('-')[0]; // 'en'
-      // Try to find ANY English voice if specific regional one fails
-      const fallback = voices.find(v => v.lang.startsWith(baseLang));
-      
-      if (fallback) {
-        console.warn(`TTS: Requested ${lang} not found, falling back to ${fallback.lang} (${fallback.name})`);
-        utterance.voice = fallback;
-      } else {
-        console.error(`TTS: No voice found for ${lang} or fallback. Available: ${voices.length}`);
-      }
     }
   }
 
   // Use a small timeout to let the cancel action propagate
   setTimeout(() => {
-    // If we have a valid voice (locally or cached), use browser TTS
     if (utterance.voice) {
-      console.log(`TTS: Speaking "${text}" using [${utterance.voice.name}]`);
       synth.speak(utterance);
     } else {
-      // 4. LAST RESORT: Fallback to Online API (e.g. Youdao/Google)
-      // Browser has absolutely no English voices (common in some restricted Windows/Chrome envs)
-      console.warn(`TTS: No browser voice for ${lang}, falling back to Online API.`);
+      // 4. LAST RESORT: Fallback to Online API
       playOnlineTTS(text, lang);
     }
   }, 50);
-
-  // Keep-alive only for long text if using browser TTS
-  if (text.length > 100 && utterance.voice) {
-    const keepAlive = setInterval(() => {
-      if (!synth.speaking) {
-        clearInterval(keepAlive);
-      } else {
-        synth.resume();
-      }
-    }, 5000);
-  }
 }
 
 /**
  * Fallback to Youdao Dictionary's public TTS API
- * High quality, reliable, supports explicit US/UK types
  */
 const playOnlineTTS = (text: string, lang: string) => {
-  // type=0: US, type=1: UK
   const type = lang.toLowerCase().includes('gb') || lang.toLowerCase().includes('uk') ? 1 : 0;
   const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&type=${type}`);
-  
   audio.play().catch(e => console.error('Online TTS playback failed:', e));
 };

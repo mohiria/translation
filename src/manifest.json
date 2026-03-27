@@ -53,7 +53,6 @@
     {
       "matches": ["<all_urls>"],
       "resources": [
-        "dictionaries/core-vocab.json",
         "data/version.json",
         "data/dictionary-core.json.gz",
         "src/assets/icon-active-16.png",
