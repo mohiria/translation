@@ -6,6 +6,7 @@
     <title>In-Reading: 综合逻辑压力测试</title>
     <style>
         body {
+            transition: background-color 0.3s, color 0.3s;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.8;
             max-width: 900px;
@@ -13,6 +14,10 @@
             padding: 0 30px;
             color: #2c3e50;
             background-color: #fff;
+        }
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
         }
         .header {
             text-align: center;
@@ -23,6 +28,45 @@
         h1 { color: #4b8bf5; margin-bottom: 5px; }
         .metadata { font-size: 0.9em; color: #7f8c8d; margin-bottom: 20px; }
         
+        .mode-toggle {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            width: 60px;
+            height: 30px;
+            border-radius: 15px;
+            background: #eee;
+            cursor: pointer;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            transition: background 0.3s;
+            border: none;
+            z-index: 1000;
+        }
+        .mode-toggle::before {
+            content: "☀️";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s, background 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 14px;
+        }
+        body.dark-mode .mode-toggle {
+            background: #444;
+        }
+        body.dark-mode .mode-toggle::before {
+            content: "🌙";
+            transform: translateX(30px);
+            background: #333;
+        }
+
         .demo-nav {
             display: flex;
             gap: 15px;
@@ -45,18 +89,31 @@
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             font-size: 1.1em;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.dark-mode .article-content {
+            background: #2d2d2d;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
         b { color: #2980b9; }
+        body.dark-mode b { color: #5dade2; }
         .highlight-box {
             margin-top: 40px;
             padding: 20px;
             background: #f9f9f9;
             border-left: 5px solid #4b8bf5;
             font-size: 0.9em;
+            transition: background-color 0.3s;
+        }
+        body.dark-mode .highlight-box {
+            background: #252525;
+            color: #bbb;
         }
     </style>
 </head>
 <body>
+
+    <button class="mode-toggle" onclick="document.body.classList.toggle('dark-mode')" title="Toggle Dark/Light Mode"></button>
 
     <div class="header">
         <h1>The Guardian of the Laboratory</h1>

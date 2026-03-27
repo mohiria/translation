@@ -274,9 +274,9 @@ const createWordContainer = (match: any, pronunciation: string, showIPA: boolean
     
     voiceBtn.innerHTML = `
       <svg class="youdao-voice-svg" viewBox="0 0 1024 1024" width="14" height="14">
-        <rect class="source" x="256" y="384" width="64" height="256" rx="32" fill="#a1a1a1" />
-        <path class="wave wave-1" d="M448 320c48 0 96 85.3 96 192s-48 192-96 192" stroke="#a1a1a1" stroke-width="80" fill="none" stroke-linecap="round" />
-        <path class="wave wave-2" d="M608 192c80 0 160 143.3 160 320s-80 320-160 320" stroke="#a1a1a1" stroke-width="80" fill="none" stroke-linecap="round" />
+        <rect class="source" x="256" y="384" width="64" height="256" rx="32" fill="currentColor" opacity="0.6" />
+        <path class="wave wave-1" d="M448 320c48 0 96 85.3 96 192s-48 192-96 192" stroke="currentColor" stroke-width="80" fill="none" stroke-linecap="round" opacity="0.6" />
+        <path class="wave wave-2" d="M608 192c80 0 160 143.3 160 320s-80 320-160 320" stroke="currentColor" stroke-width="80" fill="none" stroke-linecap="round" opacity="0.6" />
       </svg>
       <style>
         @keyframes voiceWaveFade {
@@ -284,10 +284,10 @@ const createWordContainer = (match: any, pronunciation: string, showIPA: boolean
           50% { opacity: 1; }
           100% { opacity: 0.3; }
         }
-        .ll-voice-btn:hover .source { fill: #4b8bf5; }
-        .ll-voice-btn:hover .wave { stroke: #4b8bf5; }
-        .ll-voice-btn.playing .source { fill: #4b8bf5; }
-        .ll-voice-btn.playing .wave { stroke: #4b8bf5; }
+        .ll-voice-btn:hover .source { fill: #4b8bf5; opacity: 1; }
+        .ll-voice-btn:hover .wave { stroke: #4b8bf5; opacity: 1; }
+        .ll-voice-btn.playing .source { fill: #4b8bf5; opacity: 1; }
+        .ll-voice-btn.playing .wave { stroke: #4b8bf5; opacity: 1; }
         .ll-voice-btn.playing .wave-1 { animation: voiceWaveFade 0.6s infinite; }
         .ll-voice-btn.playing .wave-2 { animation: voiceWaveFade 0.6s infinite 0.2s; }
       </style>
@@ -311,9 +311,29 @@ const createWordContainer = (match: any, pronunciation: string, showIPA: boolean
   const ipaPart = (!shouldHideIPA && showIPA && exp.ipa) ? `${exp.ipa}` : ''
   const separator = ipaPart ? ' · ' : ''
   
-  translation.textContent = ` (${ipaPart}${separator}${exp.meaning})`
+  // Abbreviate POS for inline display (e.g. noun -> n.)
+  const POS_MAP: Record<string, string> = {
+    'noun': 'n.',
+    'verb': 'v.',
+    'adjective': 'adj.',
+    'adverb': 'adv.',
+    'preposition': 'prep.',
+    'pronoun': 'pron.',
+    'conjunction': 'conj.',
+    'determiner': 'det.',
+    'exclamation': 'excl.',
+    'number': 'num.',
+    'particle': 'part.'
+  };
+  
+  let displayMeaning = exp.meaning || '';
+  Object.entries(POS_MAP).forEach(([full, abbr]) => {
+    displayMeaning = displayMeaning.replace(new RegExp(`\\b${full}\\b`, 'g'), abbr);
+  });
+
+  translation.textContent = ` (${ipaPart}${separator}${displayMeaning})`
   Object.assign(translation.style, {
-    color: '#666',
+    color: 'inherit',
     fontSize: '0.8em',
     marginLeft: '4px',
     fontWeight: 'normal',
